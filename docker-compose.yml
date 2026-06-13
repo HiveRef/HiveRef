@@ -1,0 +1,86 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hiveref-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    ports:
+      - "9000:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - hiveref
+
+  vite:
+    image: node:24
+    container_name: hiveref-vite
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: ["npm", "run", "dev"]
+    ports:
+      - "5173:5173"
+    networks:
+      - hiveref
+
+  postgres:
+    image: postgres:17
+    container_name: hiveref-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hiveref
+      POSTGRES_USER: hiveref
+      POSTGRES_PASSWORD: hiveref
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiveref"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hiveref
+
+  redis:
+    image: redis:7-alpine
+    container_name: hiveref-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - hiveref
+
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hiveref-horizon
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: ["php", "artisan", "horizon"]
+    depends_on:
+      - app
+      - redis
+    networks:
+      - hiveref
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  hiveref:

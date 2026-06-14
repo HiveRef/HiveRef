@@ -26,9 +26,9 @@ npm install
 # Dev (Docker Compose)
 docker compose up -d
 
-# Dev (local — after scaffold)
-composer run dev          # ou: php artisan serve
-npm run dev               # Vite
+# Dev (local — sem pcntl)
+composer run dev          # php artisan serve + npm run dev
+composer run dev:queue    # + queue:listen (pcntl needed for horizon/pail)
 
 # Testes
 php artisan test          # ou: ./vendor/bin/pest
@@ -36,12 +36,11 @@ php artisan test --filter NomeDoTeste
 
 # Lint / análise estática
 ./vendor/bin/pint        # Laravel Pint (PSR-12)
-./vendor/bin/phpstan analyse
 
 # Migrations
 php artisan migrate:fresh --seed
 
-# Queue (Horizon)
+# Queue (Horizon — requer ext-pcntl)
 php artisan horizon
 ```
 
@@ -78,12 +77,26 @@ npm install
 # Build assets
 npm run build
 
-# Rodar migrations (SQLite padrão para dev)
+# PostgreSQL (obrigatório)
+sudo apt-get install -y postgresql postgresql-client php-pgsql
+# Se php-pgsql não estiver disponível para sua versão PHP:
+#   sudo apt-get install -y libpq-dev
+#   cd /tmp && curl -sL https://www.php.net/distributions/php-$(php -r 'echo PHP_VERSION;').tar.gz | tar xz
+#   cd /tmp/php-*/ext/pdo_pgsql && phpize && ./configure --with-pdo-pgsql=/usr && make && sudo make install
+#   echo "extension=pdo_pgsql.so" | sudo tee /usr/local/php/8.4.15/ini/conf.d/pdo_pgsql.ini
+sudo service postgresql start
+sudo -u postgres psql -c "CREATE USER hiveref WITH PASSWORD 'hiveref' CREATEDB;"
+sudo -u postgres psql -c "CREATE DATABASE hiveref OWNER hiveref;"
+
+# Rodar migrations
 php artisan migrate --graceful
 
 # Dev server (Laravel + Vite)
-composer run dev          # ou: php artisan serve + npm run dev separados
+composer run dev          # php artisan serve --host=0.0.0.0 + npm run dev
+# Acessar via http://127.0.0.1:8000 ou (no Codespaces) via URL da porta 8000
 ```
+
+> **Codespaces:** `php artisan serve` usa `--host=0.0.0.0` para expor a porta. Acesse pela URL gerada automaticamente (porta 8000) ou via proxy do Vite em `localhost:5173`. As portas 8000 e 5173 precisam estar como **public** no Codespaces — o `.devcontainer/devcontainer.json` já configura isso automaticamente.
 
 ## Arquitetura (visão geral)
 

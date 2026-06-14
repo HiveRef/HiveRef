@@ -8,16 +8,16 @@ if [ "$RUN_BOOTSTRAP" = "true" ]; then
         cp .env.example .env
     fi
 
-    # Generate app key if empty in .env
-    if [ -f .env ] && ! grep -q "^APP_KEY=.\+" .env; then
-        echo "Generating application key..."
-        php artisan key:generate --ansi
-    fi
-
     # Install composer dependencies if vendor doesn't exist
     if [ ! -d vendor ] || [ ! -f vendor/autoload.php ]; then
         echo "Installing Composer dependencies..."
         composer install --no-interaction --optimize-autoloader
+    fi
+
+    # Generate app key if empty in .env (requires vendor autoload)
+    if [ -f .env ] && ! grep -q "^APP_KEY=.\+" .env; then
+        echo "Generating application key..."
+        php artisan key:generate --ansi
     fi
 
     # Ensure SQLite database file exists

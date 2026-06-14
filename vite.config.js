@@ -27,11 +27,5 @@ export default defineConfig({
         ...(codespaceUrl ? {
             allowedHosts: [process.env.CODESPACE_NAME + '-5173.' + process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN],
         } : {}),
-        proxy: {
-            '^/(?!@|resources|node_modules|build|assets|favicon)': {
-                target: 'http://127.0.0.1:8000',
-                changeOrigin: true,
-            },
-        },
     },
 });

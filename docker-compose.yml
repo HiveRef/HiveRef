@@ -10,6 +10,15 @@ services:
       - .:/var/www
     ports:
       - "9000:9000"
+    environment:
+      - RUN_BOOTSTRAP=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=hiveref
+      - DB_USERNAME=hiveref
+      - DB_PASSWORD=hiveref
+      - REDIS_HOST=redis
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,10 +31,11 @@ services:
     image: node:24
     container_name: hiveref-vite
     restart: unless-stopped
+    user: "1000:1000"
     working_dir: /var/www
     volumes:
       - .:/var/www
-    command: ["npm", "run", "dev"]
+    entrypoint: ["sh", "-c", "[ ! -d node_modules ] && npm install --legacy-peer-deps; npm run dev"]
     ports:
       - "5173:5173"
     networks:
@@ -71,6 +81,15 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+    environment:
+      - RUN_BOOTSTRAP=false
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=hiveref
+      - DB_USERNAME=hiveref
+      - DB_PASSWORD=hiveref
+      - REDIS_HOST=redis
     command: ["php", "artisan", "horizon"]
     depends_on:
       - app

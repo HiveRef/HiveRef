@@ -19,11 +19,18 @@
 ## Comandos
 
 ```bash
-# Iniciar tudo (nginx + app + vite + postgres + redis + horizon)
-composer run dev          # docker compose up -d + migrate
+# Iniciar Docker (nginx + app + vite + postgres + redis + horizon)
+docker compose up -d
 
 # Parar
 docker compose down
+
+# Dev local (Laravel + Vite — fora do Docker, precisa de PHP + pdo_pgsql no host)
+composer run dev          # php artisan serve + npm run dev
+
+# Dev com Docker (dentro do container)
+docker compose exec -T app php artisan serve --host=0.0.0.0
+# (Vite já sobe automaticamente no container hiveref-vite)
 
 # Testes (dentro do container)
 docker compose exec -T app php artisan test --filter NomeDoTeste
@@ -64,7 +71,7 @@ Exemplo: `@carlosegoulart/1/feat/Laravel-Setup`
 - API keys de IA nunca persistem no BD local — vão para GitHub Repository Secrets via API
 - Erros de rate limit do GitHub devem trocar status da task para `paused` ou `failed` graciosamente (sem derrubar workers)
 
-## Setup local (Docker)
+## Setup local
 
 ```bash
 # Instalar dependências
@@ -74,8 +81,8 @@ npm install
 # Build assets
 npm run build
 
-# Dev server (Laravel + Vite — 100% Docker, sem dependências no host)
-composer run dev          # docker compose up -d + migrate
+# Dev server (Laravel + Vite — fora do Docker, precisa de PHP + pdo_pgsql no host)
+composer run dev          # php artisan serve + npm run dev
 # Acessar via http://127.0.0.1:8000
 ```
 

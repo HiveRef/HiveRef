@@ -1,0 +1,27 @@
+{
+    "name": "HiveRef",
+    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "forwardPorts": [8000, 5173],
+    "portsAttributes": {
+        "8000": {
+            "label": "Laravel",
+            "onAutoForward": "notify",
+            "visibility": "public"
+        },
+        "5173": {
+            "label": "Vite",
+            "onAutoForward": "notify",
+            "visibility": "public"
+        }
+    },
+    "postCreateCommand": "composer install && npm install",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "laravel.vscode-laravel",
+                "bradlc.vscode-tailwindcss",
+                "dbaeumer.vscode-eslint"
+            ]
+        }
+    }
+}

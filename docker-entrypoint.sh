@@ -20,9 +20,13 @@ if [ "$RUN_BOOTSTRAP" = "true" ]; then
         php artisan key:generate --ansi
     fi
 
-    # Ensure SQLite database file exists
-    mkdir -p database
-    touch database/database.sqlite
+    # Ensure SQLite database file exists only if using SQLite
+    DB_CONN="${DB_CONNECTION:-$(grep -E "^DB_CONNECTION=" .env 2>/dev/null | cut -d= -f2 | tr -d '\r ')}"
+    if [ "$DB_CONN" = "sqlite" ] || [ -z "$DB_CONN" ]; then
+        echo "SQLite connection detected. Ensuring SQLite database file exists..."
+        mkdir -p database
+        touch database/database.sqlite
+    fi
 
     # Run migrations
     echo "Running migrations..."
@@ -35,7 +39,11 @@ if [ "$RUN_BOOTSTRAP" = "true" ]; then
         HOST_GID=$(stat -c '%g' /var/www)
         if [ "$HOST_UID" != "0" ]; then
             echo "Fixing file ownership for host user ($HOST_UID:$HOST_GID)..."
-            chown -R $HOST_UID:$HOST_GID .env vendor bootstrap/cache storage database/database.sqlite 2>/dev/null || true
+            CHOWN_PATHS=".env vendor bootstrap/cache storage"
+            if [ -f database/database.sqlite ]; then
+                CHOWN_PATHS="$CHOWN_PATHS database/database.sqlite"
+            fi
+            chown -R $HOST_UID:$HOST_GID $CHOWN_PATHS 2>/dev/null || true
         fi
     fi
 else

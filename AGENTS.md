@@ -12,36 +12,33 @@
 | Frontend | React via Inertia.js (SPA) |
 | Banco | PostgreSQL |
 | Cache/Fila | Redis + Laravel Horizon |
-| Conteiner | Docker Compose (app, vite, postgres, redis/horizon) |
+| Conteiner | Docker Compose (nginx, app, vite, postgres, redis, horizon) |
 | Testes | Pest PHP — TDD estrito, cobertura 100% |
-| CI | GitHub Actions (criar quando houver código) |
+| CI | GitHub Actions |
 
 ## Comandos
 
 ```bash
-# Instalar dependências
-composer install
-npm install
+# Iniciar tudo (nginx + app + vite + postgres + redis + horizon)
+composer run dev          # docker compose up -d + migrate
 
-# Dev (Docker Compose)
-docker compose up -d
+# Parar
+docker compose down
 
-# Dev (local — sem pcntl)
-composer run dev          # php artisan serve + npm run dev
-composer run dev:queue    # + queue:listen (pcntl needed for horizon/pail)
-
-# Testes
-php artisan test          # ou: ./vendor/bin/pest
-php artisan test --filter NomeDoTeste
+# Testes (dentro do container)
+docker compose exec -T app php artisan test --filter NomeDoTeste
 
 # Lint / análise estática
-./vendor/bin/pint        # Laravel Pint (PSR-12)
+docker compose exec -T app ./vendor/bin/pint
 
-# Migrations
-php artisan migrate:fresh --seed
+# Migrations / seeds
+docker compose exec -T app php artisan migrate:fresh --seed
 
-# Queue (Horizon — requer ext-pcntl)
-php artisan horizon
+# Horizon (já sobe automaticamente com docker compose up)
+docker compose exec -T app php artisan horizon
+
+# Logs
+docker compose logs -f nginx app vite
 ```
 
 ## Convenções
@@ -67,7 +64,7 @@ Exemplo: `@carlosegoulart/1/feat/Laravel-Setup`
 - API keys de IA nunca persistem no BD local — vão para GitHub Repository Secrets via API
 - Erros de rate limit do GitHub devem trocar status da task para `paused` ou `failed` graciosamente (sem derrubar workers)
 
-## Setup local
+## Setup local (Docker)
 
 ```bash
 # Instalar dependências
@@ -77,26 +74,12 @@ npm install
 # Build assets
 npm run build
 
-# PostgreSQL (obrigatório)
-sudo apt-get install -y postgresql postgresql-client php-pgsql
-# Se php-pgsql não estiver disponível para sua versão PHP:
-#   sudo apt-get install -y libpq-dev
-#   cd /tmp && curl -sL https://www.php.net/distributions/php-$(php -r 'echo PHP_VERSION;').tar.gz | tar xz
-#   cd /tmp/php-*/ext/pdo_pgsql && phpize && ./configure --with-pdo-pgsql=/usr && make && sudo make install
-#   echo "extension=pdo_pgsql.so" | sudo tee /usr/local/php/8.4.15/ini/conf.d/pdo_pgsql.ini
-sudo service postgresql start
-sudo -u postgres psql -c "CREATE USER hiveref WITH PASSWORD 'hiveref' CREATEDB;"
-sudo -u postgres psql -c "CREATE DATABASE hiveref OWNER hiveref;"
-
-# Rodar migrations
-php artisan migrate --graceful
-
-# Dev server (Laravel + Vite)
-composer run dev          # php artisan serve --host=0.0.0.0 + npm run dev
-# Acessar via http://127.0.0.1:8000 ou (no Codespaces) via URL da porta 8000
+# Dev server (Laravel + Vite — 100% Docker, sem dependências no host)
+composer run dev          # docker compose up -d + migrate
+# Acessar via http://127.0.0.1:8000
 ```
 
-> **Codespaces:** `php artisan serve` usa `--host=0.0.0.0` para expor a porta. Acesse pela URL gerada automaticamente (porta 8000) ou via proxy do Vite em `localhost:5173`. As portas 8000 e 5173 precisam estar como **public** no Codespaces — o `.devcontainer/devcontainer.json` já configura isso automaticamente.
+> **Codespaces:** Acesse pela URL da porta 8000. A porta 5174 do Vite é para assets e o proxy já é configurado automaticamente pelo `@vite()` Blade directive.
 
 ## Arquitetura (visão geral)
 

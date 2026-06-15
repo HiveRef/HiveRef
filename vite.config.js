@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 const isCodespaces = process.env.CODESPACES === 'true';
 const codespaceUrl = isCodespaces
-    ? `https://${process.env.CODESPACE_NAME}-5173.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
+    ? `https://${process.env.CODESPACE_NAME}-5174.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
     : null;
 
 export default defineConfig({
@@ -18,14 +18,15 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: true,
         port: 5174,
-        origin: codespaceUrl?.replace('-5173.', '-5174.'),
+        origin: codespaceUrl ?? 'http://localhost:5174',
         cors: true,
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
         ...(codespaceUrl ? {
-            allowedHosts: [process.env.CODESPACE_NAME + '-5173.' + process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN],
+            allowedHosts: [codespaceUrl.replace('https://', '')],
         } : {}),
     },
 });

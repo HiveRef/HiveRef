@@ -50,6 +50,10 @@ services:
     volumes:
       - .:/var/www
     entrypoint: ["sh", "-c", "[ ! -d node_modules ] && npm install --legacy-peer-deps; npm run dev"]
+    environment:
+      - CODESPACES=${CODESPACES:-false}
+      - CODESPACE_NAME=${CODESPACE_NAME:-}
+      - GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN=${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}
     ports:
       - "5174:5174"
     networks:

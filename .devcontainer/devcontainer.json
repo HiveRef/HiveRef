@@ -1,10 +1,12 @@
 {
     "name": "HiveRef",
-    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/var/www",
     "forwardPorts": [8000, 5174],
     "portsAttributes": {
         "8000": {
-            "label": "Laravel",
+            "label": "Laravel (Nginx)",
             "onAutoForward": "notify",
             "visibility": "public"
         },
@@ -14,12 +16,10 @@
             "visibility": "public"
         }
     },
-    "postCreateCommand": "composer install && npm install",
-    "postStartCommand": "gh cs ports visibility 5174:public 8000:public",
     "customizations": {
         "vscode": {
             "extensions": [
-                "laravel.vscode-laravel",
+                "bmewburn.vscode-intelephense-client",
                 "bradlc.vscode-tailwindcss",
                 "dbaeumer.vscode-eslint"
             ]

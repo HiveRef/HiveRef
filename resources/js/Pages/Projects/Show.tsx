@@ -1,4 +1,4 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface SubTask {
@@ -34,7 +34,7 @@ interface PageProps {
     project: Project;
 }
 
-function SubTaskCard({ subTask }: { subTask: SubTask }) {
+function SubTaskCard({ subTask, onApprove, onReject }: { subTask: SubTask; onApprove?: (id: number) => void; onReject?: (id: number) => void }) {
     const statusColors: Record<string, string> = {
         pending: 'bg-yellow-900/30 text-yellow-400',
         provisioning: 'bg-blue-900/30 text-blue-400',
@@ -70,6 +70,22 @@ function SubTaskCard({ subTask }: { subTask: SubTask }) {
                             Ver Pull Request →
                         </a>
                     )}
+                    {subTask.status === 'awaiting_review' && (
+                        <div className="flex gap-2 mt-3">
+                            <button
+                                onClick={() => onApprove?.(subTask.id)}
+                                className="bg-green-700 hover:bg-green-600 text-white text-xs rounded px-3 py-1 transition"
+                            >
+                                Aprovar
+                            </button>
+                            <button
+                                onClick={() => onReject?.(subTask.id)}
+                                className="bg-red-900/50 hover:bg-red-800/70 text-red-400 text-xs rounded px-3 py-1 transition"
+                            >
+                                Rejeitar
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full ${statusColors[subTask.status] || 'bg-gray-800 text-gray-400'}`}>
                     {subTask.status}
@@ -88,6 +104,14 @@ export default function ProjectShow() {
     const prompt = useForm({ prompt: '' });
     const repo = useForm({ github_repo_id: '', github_repo_name: '', github_repo_full_name: '' });
     const secret = useForm({ secret_name: 'OPENAI_API_KEY', secret_value: '' });
+
+    function approveSubTask(id: number) {
+        router.post(`/sub-tasks/${id}/approve`);
+    }
+
+    function rejectSubTask(id: number) {
+        router.post(`/sub-tasks/${id}/reject`);
+    }
 
     return (
         <div className="min-h-screen bg-[#121214]">
@@ -216,7 +240,7 @@ export default function ProjectShow() {
                                     {task.sub_tasks.length > 0 && (
                                         <div className="space-y-2">
                                             {task.sub_tasks.map(st => (
-                                                <SubTaskCard key={st.id} subTask={st} />
+                                                <SubTaskCard key={st.id} subTask={st} onApprove={approveSubTask} onReject={rejectSubTask} />
                                             ))}
                                         </div>
                                     )}

@@ -2,6 +2,7 @@
 
 use App\Actions\Github\StoreApiSecrets;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -17,11 +18,11 @@ test('it stores api key as github repository secret', function () {
     $publicKey = sodium_crypto_box_publickey($keypair);
 
     Http::fake([
-        "api.github.com/repos/*/actions/secrets/public-key" => Http::response([
+        'api.github.com/repos/*/actions/secrets/public-key' => Http::response([
             'key' => base64_encode($publicKey),
             'key_id' => 'test-key-id',
         ], 200),
-        "api.github.com/repos/*/actions/secrets/OPENAI_API_KEY" => Http::response([], 201),
+        'api.github.com/repos/*/actions/secrets/OPENAI_API_KEY' => Http::response([], 201),
     ]);
 
     $result = $this->action->execute(
@@ -79,6 +80,6 @@ test('it never persists the secret value in the database', function () {
     $this->user->refresh();
     expect($this->user->github_token)->not->toBe('sk-ant-secret');
 
-    $logins = \Illuminate\Support\Facades\DB::table('users')->where('id', $this->user->id)->get();
+    $logins = DB::table('users')->where('id', $this->user->id)->get();
     expect($logins->first()->github_token)->not->toBe('sk-ant-secret');
 });

@@ -12,14 +12,14 @@ class MergePullRequest
     {
         $token = $user->github_token;
 
-        if (!$token || !$subTask->pr_url) {
+        if (! $token || ! $subTask->pr_url) {
             return false;
         }
 
         $mergeResponse = Http::withToken($token)
             ->put("{$subTask->pr_url}/merge");
 
-        if (!$mergeResponse->successful() || !$mergeResponse->json('merged')) {
+        if (! $mergeResponse->successful() || ! $mergeResponse->json('merged')) {
             return false;
         }
 

@@ -27,7 +27,7 @@ class ProjectSubTaskFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'provisioning',
-            'branch_name' => 'feature/' . fake()->slug(),
+            'branch_name' => 'feature/'.fake()->slug(),
         ]);
     }
 
@@ -35,8 +35,8 @@ class ProjectSubTaskFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'awaiting_review',
-            'branch_name' => 'feature/' . fake()->slug(),
-            'codespace_id' => 'cs_' . fake()->uuid(),
+            'branch_name' => 'feature/'.fake()->slug(),
+            'codespace_id' => 'cs_'.fake()->uuid(),
             'pr_url' => fake()->url(),
         ]);
     }

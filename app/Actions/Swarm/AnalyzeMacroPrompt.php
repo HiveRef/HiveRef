@@ -30,19 +30,21 @@ class AnalyzeMacroPrompt
 
             if ($response->failed()) {
                 $task->update(['status' => 'failed']);
+
                 return;
             }
 
             $content = $response->json('choices.0.message.content');
             $subTasks = json_decode($content, true);
 
-            if (!is_array($subTasks)) {
+            if (! is_array($subTasks)) {
                 $task->update(['status' => 'failed']);
+
                 return;
             }
 
             foreach ($subTasks as $subTask) {
-                if (!isset($subTask['title'])) {
+                if (! isset($subTask['title'])) {
                     continue;
                 }
 

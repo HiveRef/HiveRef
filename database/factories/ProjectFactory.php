@@ -28,7 +28,7 @@ class ProjectFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'github_repo_id' => (string) fake()->unique()->randomNumber(8),
             'github_repo_name' => fake()->slug(2),
-            'github_repo_full_name' => fake()->userName() . '/' . fake()->slug(2),
+            'github_repo_full_name' => fake()->userName().'/'.fake()->slug(2),
         ]);
     }
 }

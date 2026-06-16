@@ -22,22 +22,24 @@ class ProvisionSubTaskCodespace implements ShouldQueue
     {
         $token = $this->user->github_token;
 
-        if (!$token || !$this->subTask->branch_name) {
+        if (! $token || ! $this->subTask->branch_name) {
             $this->subTask->update([
                 'status' => 'failed',
                 'error_message' => 'Missing GitHub token or branch name',
             ]);
+
             return;
         }
 
         $project = $this->subTask->task->project;
         $repoFullName = $project->github_repo_full_name;
 
-        if (!$repoFullName) {
+        if (! $repoFullName) {
             $this->subTask->update([
                 'status' => 'failed',
                 'error_message' => 'Project has no linked GitHub repository',
             ]);
+
             return;
         }
 
@@ -54,6 +56,7 @@ class ProvisionSubTaskCodespace implements ShouldQueue
                 'status' => 'failed',
                 'error_message' => $response->json('message') ?? 'Failed to create codespace',
             ]);
+
             return;
         }
 

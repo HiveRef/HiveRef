@@ -91,7 +91,7 @@ class ProjectController extends Controller
     {
         $token = auth()->user()->github_token;
 
-        if (!$token) {
+        if (! $token) {
             return response()->json([], 401);
         }
 
@@ -131,7 +131,7 @@ class ProjectController extends Controller
             secretValue: $validated['secret_value'],
         );
 
-        if (!$result) {
+        if (! $result) {
             return back()->withErrors(['message' => 'Failed to store secret on GitHub']);
         }
 

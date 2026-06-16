@@ -16,7 +16,7 @@ class StoreApiSecrets
     ): bool {
         $token = $user->github_token;
 
-        if (!$token) {
+        if (! $token) {
             return false;
         }
 

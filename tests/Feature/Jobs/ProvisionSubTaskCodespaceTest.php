@@ -24,7 +24,7 @@ beforeEach(function () {
 test('it provisions a codespace for a sub-task', function () {
     Http::fake([
         'api.github.com/repos/*/codespaces' => Http::response([
-            'id' => 'cs_swarm_' . fake()->randomNumber(6),
+            'id' => 'cs_swarm_'.fake()->randomNumber(6),
             'web_url' => 'https://github.com/codespaces/test-env',
         ], 201),
     ]);

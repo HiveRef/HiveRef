@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -24,7 +25,7 @@ class ProvisionSubTaskCodespace implements ShouldQueue
 
         if (! $token || ! $this->subTask->branch_name) {
             $this->subTask->update([
-                'status' => 'failed',
+                'status' => SubTaskStatus::Failed,
                 'error_message' => 'Missing GitHub token or branch name',
             ]);
 
@@ -36,7 +37,7 @@ class ProvisionSubTaskCodespace implements ShouldQueue
 
         if (! $repoFullName) {
             $this->subTask->update([
-                'status' => 'failed',
+                'status' => SubTaskStatus::Failed,
                 'error_message' => 'Project has no linked GitHub repository',
             ]);
 
@@ -53,7 +54,7 @@ class ProvisionSubTaskCodespace implements ShouldQueue
 
         if ($response->failed()) {
             $this->subTask->update([
-                'status' => 'failed',
+                'status' => SubTaskStatus::Failed,
                 'error_message' => $response->json('message') ?? 'Failed to create codespace',
             ]);
 
@@ -61,7 +62,7 @@ class ProvisionSubTaskCodespace implements ShouldQueue
         }
 
         $this->subTask->update([
-            'status' => 'provisioning',
+            'status' => SubTaskStatus::Provisioning,
             'codespace_id' => $response->json('id'),
         ]);
     }

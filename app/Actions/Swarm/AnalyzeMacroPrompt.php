@@ -2,6 +2,8 @@
 
 namespace App\Actions\Swarm;
 
+use App\Enums\SubTaskStatus;
+use App\Enums\TaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +31,7 @@ class AnalyzeMacroPrompt
                 ]);
 
             if ($response->failed()) {
-                $task->update(['status' => 'failed']);
+                $task->update(['status' => TaskStatus::Failed]);
 
                 return;
             }
@@ -38,7 +40,7 @@ class AnalyzeMacroPrompt
             $subTasks = json_decode($content, true);
 
             if (! is_array($subTasks)) {
-                $task->update(['status' => 'failed']);
+                $task->update(['status' => TaskStatus::Failed]);
 
                 return;
             }
@@ -52,13 +54,13 @@ class AnalyzeMacroPrompt
                     'project_task_id' => $task->id,
                     'title' => $subTask['title'],
                     'description' => $subTask['description'] ?? null,
-                    'status' => 'pending',
+                    'status' => SubTaskStatus::Pending,
                 ]);
             }
 
-            $task->update(['status' => 'swarm_active']);
+            $task->update(['status' => TaskStatus::SwarmActive]);
         } catch (\Exception $e) {
-            $task->update(['status' => 'failed']);
+            $task->update(['status' => TaskStatus::Failed]);
         }
     }
 }

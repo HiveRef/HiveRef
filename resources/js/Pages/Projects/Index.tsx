@@ -10,7 +10,7 @@ interface Project {
 }
 
 interface PageProps {
-    auth: { user: { id: number; name: string; username: string; avatar: string | null } | null };
+    auth: { user: { id: number; username: string; avatar: string | null } | null };
     projects: Project[];
 }
 
@@ -33,7 +33,7 @@ export default function ProjectIndex() {
                     </div>
                     {auth?.user && (
                         <div className="flex items-center gap-3">
-                            <span className="text-gray-400 text-sm">{auth.user.name}</span>
+                            <span className="text-gray-400 text-sm">{auth.user.username}</span>
                             <Link href="/logout" method="post" as="button" className="text-sm text-gray-500 hover:text-white">Sair</Link>
                         </div>
                     )}

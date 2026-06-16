@@ -1,7 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
 
 interface RegisterForm {
-    name: string;
     username: string;
     password: string;
     password_confirmation: string;
@@ -9,7 +8,6 @@ interface RegisterForm {
 
 export default function Register() {
     const { data, setData, post, processing, errors } = useForm<RegisterForm>({
-        name: '',
         username: '',
         password: '',
         password_confirmation: '',
@@ -27,17 +25,6 @@ export default function Register() {
                 <p className="text-[#FACC15] text-center text-sm mb-8">Crie sua conta</p>
 
                 <form onSubmit={submit} className="space-y-4">
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="Nome"
-                            value={data.name}
-                            onChange={e => setData('name', e.target.value)}
-                            className="w-full bg-[#1e1e24] border border-gray-700 rounded px-4 py-2 text-white focus:border-[#FACC15] outline-none"
-                        />
-                        {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
-                    </div>
-
                     <div>
                         <input
                             type="text"

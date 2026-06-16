@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('password')->nullable()->change();
             $table->string('github_id')->nullable()->unique()->after('id');
             $table->text('github_token')->nullable()->after('password');
-            $table->string('username')->nullable()->unique()->after('name');
+            $table->string('username')->nullable()->unique()->after('id');
             $table->string('avatar')->nullable()->after('username');
         });
     }

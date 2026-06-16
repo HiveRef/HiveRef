@@ -3,7 +3,6 @@ import { Link, usePage } from '@inertiajs/react';
 interface Auth {
     user: {
         id: number;
-        name: string;
         username: string;
         avatar: string | null;
     } | null;
@@ -28,7 +27,7 @@ export default function Dashboard() {
                     {auth.user.avatar && (
                         <img src={auth.user.avatar} alt="" className="w-10 h-10 rounded-full" />
                     )}
-                    <span className="text-white">{auth.user.name}</span>
+                    <span className="text-white">{auth.user.username}</span>
                     <Link
                         href="/logout"
                         method="post"

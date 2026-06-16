@@ -10,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
-    'name', 'email', 'password', 'github_id', 'github_token',
+    'email', 'password', 'github_id', 'github_token',
     'username', 'avatar',
 ])]
 #[Hidden(['password', 'remember_token', 'github_token'])]

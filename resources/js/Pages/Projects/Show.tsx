@@ -30,7 +30,7 @@ interface Project {
 }
 
 interface PageProps {
-    auth: { user: { id: number; name: string; username: string; avatar: string | null } | null };
+    auth: { user: { id: number; username: string; avatar: string | null } | null };
     project: Project;
 }
 
@@ -99,7 +99,7 @@ export default function ProjectShow() {
                         <h1 className="text-white font-medium">{project.name}</h1>
                     </div>
                     {auth?.user && (
-                        <span className="text-gray-400 text-sm">{auth.user.name}</span>
+                        <span className="text-gray-400 text-sm">{auth.user.username}</span>
                     )}
                 </div>
             </header>

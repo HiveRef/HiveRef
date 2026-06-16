@@ -23,7 +23,6 @@ test('guest sees register page', function () {
 
 test('user can register with username and password', function () {
     $response = $this->post('/register', [
-        'name' => 'New User',
         'username' => 'newuser',
         'password' => 'secret123',
         'password_confirmation' => 'secret123',

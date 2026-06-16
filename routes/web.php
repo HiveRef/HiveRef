@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GitHubController;
+use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,4 +24,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return Inertia::render('Dashboard');
     });
+
+    Route::prefix('projects')->group(function () {
+        Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
+        Route::post('/', [ProjectController::class, 'store'])->name('projects.store');
+        Route::get('/{project}', [ProjectController::class, 'show'])->name('projects.show');
+        Route::post('/{project}/tasks', [ProjectController::class, 'storeTask']);
+        Route::post('/{project}/link-repo', [ProjectController::class, 'linkRepo']);
+        Route::post('/{project}/secrets', [ProjectController::class, 'storeSecret']);
+    });
+
+    Route::get('/github/repositories', [ProjectController::class, 'repositories']);
 });

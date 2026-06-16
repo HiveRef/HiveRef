@@ -1,20 +1,21 @@
 {
     "name": "HiveRef",
     "image": "mcr.microsoft.com/devcontainers/universal:2",
-    "forwardPorts": [8000, 5173],
+    "forwardPorts": [8000, 5174],
     "portsAttributes": {
         "8000": {
             "label": "Laravel",
             "onAutoForward": "notify",
             "visibility": "public"
         },
-        "5173": {
+        "5174": {
             "label": "Vite",
             "onAutoForward": "notify",
             "visibility": "public"
         }
     },
     "postCreateCommand": "composer install && npm install",
+    "postStartCommand": "gh cs ports visibility 5174:public 8000:public",
     "customizations": {
         "vscode": {
             "extensions": [

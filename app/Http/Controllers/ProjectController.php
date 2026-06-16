@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Github\StoreApiSecrets;
+use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
 use App\Models\ProjectTask;
 use Illuminate\Http\Request;
@@ -66,6 +67,8 @@ class ProjectController extends Controller
             'project_id' => $project->id,
             'prompt' => $validated['prompt'],
         ]);
+
+        ProcessMacroPrompt::dispatch($task, auth()->user());
 
         return redirect("/projects/{$project->id}");
     }

@@ -91,6 +91,31 @@ test('it marks sub-task as failed when branch creation fails', function () {
     Queue::assertNotPushed(ProvisionSubTaskCodespace::class);
 });
 
+test('it pauses sub-task when branch creation is rate limited', function () {
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'api.openai.com')) {
+            return Http::response([
+                'choices' => [['message' => ['content' => json_encode([
+                    ['title' => 'Implement auth', 'description' => 'Auth system'],
+                ])]]],
+            ], 200);
+        }
+
+        return Http::response([], 429, ['Retry-After' => '60']);
+    });
+
+    $job = new ProcessMacroPrompt($this->task, $this->user);
+    $job->handle();
+
+    $this->task->refresh();
+
+    expect($this->task->status)->toBe(TaskStatus::SwarmActive);
+    expect($this->task->subTasks[0]->status)->toBe(SubTaskStatus::Paused);
+    expect($this->task->subTasks[0]->error_message)->toBe('GitHub rate limit exceeded');
+
+    Queue::assertNotPushed(ProvisionSubTaskCodespace::class);
+});
+
 test('it handles empty sub-tasks from analysis gracefully', function () {
     Http::fake(function ($request) {
         if (str_contains($request->url(), 'api.openai.com')) {

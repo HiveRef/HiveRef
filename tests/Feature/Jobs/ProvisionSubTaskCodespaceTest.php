@@ -50,6 +50,19 @@ test('it marks sub-task as failed on codespace creation error', function () {
         ->and($this->subTask->error_message)->not->toBeNull();
 });
 
+test('it pauses sub-task on rate limit and releases job', function () {
+    Http::fake([
+        'api.github.com/repos/*/codespaces' => Http::response([], 429, ['Retry-After' => '30']),
+    ]);
+
+    $job = new ProvisionSubTaskCodespace($this->subTask, $this->user);
+    $job->handle();
+
+    $this->subTask->refresh();
+    expect($this->subTask->status)->toBe(SubTaskStatus::Paused)
+        ->and($this->subTask->error_message)->toBe('GitHub rate limit exceeded');
+});
+
 test('it is dispatched to the queue', function () {
     Queue::fake();
 

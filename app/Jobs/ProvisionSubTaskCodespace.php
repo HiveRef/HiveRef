@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\Github\HandlesRateLimits;
 use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\User;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Http;
 
 class ProvisionSubTaskCodespace implements ShouldQueue
 {
-    use Dispatchable, Queueable;
+    use Dispatchable, HandlesRateLimits, Queueable;
 
     public function __construct(
         public ProjectSubTask $subTask,
@@ -53,6 +54,16 @@ class ProvisionSubTaskCodespace implements ShouldQueue
             ]);
 
         if ($response->failed()) {
+            if ($this->isRateLimited($response)) {
+                $this->subTask->update([
+                    'status' => SubTaskStatus::Paused,
+                    'error_message' => 'GitHub rate limit exceeded',
+                ]);
+                $this->release($this->getRetryAfter($response));
+
+                return;
+            }
+
             $this->subTask->update([
                 'status' => SubTaskStatus::Failed,
                 'error_message' => $response->json('message') ?? 'Failed to create codespace',

@@ -52,13 +52,16 @@ class ProcessMacroPrompt implements ShouldQueue
                 $repoFullName,
                 $branchName,
                 $this->user,
+                $subTask,
             );
 
             if (! $created) {
-                $subTask->update([
-                    'status' => SubTaskStatus::Failed,
-                    'error_message' => 'Failed to create branch in repository',
-                ]);
+                if ($subTask->status !== SubTaskStatus::Paused) {
+                    $subTask->update([
+                        'status' => SubTaskStatus::Failed,
+                        'error_message' => 'Failed to create branch in repository',
+                    ]);
+                }
 
                 continue;
             }

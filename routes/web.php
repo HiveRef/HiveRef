@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\SubTaskStatus;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\ProjectController;
+use App\Models\Project;
+use App\Models\ProjectSubTask;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -22,7 +25,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', function () {
-        return Inertia::render('Dashboard');
+        $projects = Project::where('user_id', auth()->id())
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $pendingReviews = ProjectSubTask::where('status', SubTaskStatus::AwaitingReview)
+            ->whereHas('task.project', fn ($q) => $q->where('user_id', auth()->id()))
+            ->count();
+
+        return Inertia::render('Dashboard', [
+            'projects' => $projects,
+            'pendingReviewsCount' => $pendingReviews,
+        ]);
     });
 
     Route::prefix('projects')->group(function () {

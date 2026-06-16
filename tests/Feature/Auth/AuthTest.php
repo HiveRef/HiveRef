@@ -60,6 +60,24 @@ test('authenticated user can logout', function () {
     expect(Auth::check())->toBeFalse();
 });
 
+test('user can register logout and login again', function () {
+    $this->post('/register', [
+        'username' => 'newuser',
+        'password' => 'secret123',
+        'password_confirmation' => 'secret123',
+    ])->assertRedirect('/');
+    expect(Auth::check())->toBeTrue();
+
+    $this->post('/logout');
+    expect(Auth::check())->toBeFalse();
+
+    $this->post('/login', [
+        'username' => 'newuser',
+        'password' => 'secret123',
+    ])->assertRedirect('/');
+    expect(Auth::check())->toBeTrue();
+});
+
 test('guest is redirected to login when accessing dashboard', function () {
     $this->get('/')->assertRedirect('/login');
 });

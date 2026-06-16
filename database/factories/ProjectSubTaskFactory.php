@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,14 +20,14 @@ class ProjectSubTaskFactory extends Factory
             'project_task_id' => ProjectTask::factory(),
             'title' => fake()->sentence(4),
             'description' => fake()->paragraph(),
-            'status' => 'pending',
+            'status' => SubTaskStatus::Pending,
         ];
     }
 
     public function provisioning(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'provisioning',
+            'status' => SubTaskStatus::Provisioning,
             'branch_name' => 'feature/'.fake()->slug(),
         ]);
     }
@@ -34,7 +35,7 @@ class ProjectSubTaskFactory extends Factory
     public function awaitingReview(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'awaiting_review',
+            'status' => SubTaskStatus::AwaitingReview,
             'branch_name' => 'feature/'.fake()->slug(),
             'codespace_id' => 'cs_'.fake()->uuid(),
             'pr_url' => fake()->url(),

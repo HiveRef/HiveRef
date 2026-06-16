@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\ProjectTask;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +19,7 @@ class ProjectTaskFactory extends Factory
         return [
             'project_id' => Project::factory(),
             'prompt' => fake()->sentence(10),
-            'status' => 'analyzing_prompt',
+            'status' => TaskStatus::AnalyzingPrompt,
         ];
     }
 }

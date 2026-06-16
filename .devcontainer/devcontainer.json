@@ -1,7 +1,8 @@
 {
     "name": "HiveRef",
-    "image": "mcr.microsoft.com/devcontainers/universal:2",
-    "postCreateCommand": "docker compose up -d",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/var/www",
     "forwardPorts": [8000, 5174],
     "portsAttributes": {
         "8000": {
@@ -23,8 +24,5 @@
                 "dbaeumer.vscode-eslint"
             ]
         }
-    },
-    "features": {
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
     }
 }

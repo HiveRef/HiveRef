@@ -1,11 +1,14 @@
 <?php
 
 use App\Enums\TaskStatus;
+use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
+    Queue::fake();
     $this->user = User::factory()->github()->create();
     $this->actingAs($this->user);
 });
@@ -60,6 +63,8 @@ test('user can submit a macro prompt for a project', function () {
         'project_id' => $project->id,
         'status' => TaskStatus::AnalyzingPrompt->value,
     ]);
+
+    Queue::assertPushed(ProcessMacroPrompt::class, 1);
 });
 
 test('user can list their github repositories', function () {

@@ -2,12 +2,16 @@
 
 namespace App\Actions\Github;
 
+use App\Enums\SubTaskStatus;
+use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
 class CreateBranch
 {
-    public function execute(string $repoFullName, string $branchName, User $user): bool
+    use HandlesRateLimits;
+
+    public function execute(string $repoFullName, string $branchName, User $user, ?ProjectSubTask $subTask = null): bool
     {
         $token = $user->github_token;
 
@@ -19,6 +23,13 @@ class CreateBranch
             ->get("https://api.github.com/repos/{$repoFullName}");
 
         if ($repoResponse->failed()) {
+            if ($this->isRateLimited($repoResponse) && $subTask) {
+                $subTask->update([
+                    'status' => SubTaskStatus::Paused,
+                    'error_message' => 'GitHub rate limit exceeded',
+                ]);
+            }
+
             return false;
         }
 
@@ -28,6 +39,13 @@ class CreateBranch
             ->get("https://api.github.com/repos/{$repoFullName}/git/refs/heads/{$defaultBranch}");
 
         if ($refResponse->failed()) {
+            if ($this->isRateLimited($refResponse) && $subTask) {
+                $subTask->update([
+                    'status' => SubTaskStatus::Paused,
+                    'error_message' => 'GitHub rate limit exceeded',
+                ]);
+            }
+
             return false;
         }
 
@@ -39,6 +57,17 @@ class CreateBranch
                 'sha' => $sha,
             ]);
 
-        return $createResponse->successful();
+        if ($createResponse->failed()) {
+            if ($this->isRateLimited($createResponse) && $subTask) {
+                $subTask->update([
+                    'status' => SubTaskStatus::Paused,
+                    'error_message' => 'GitHub rate limit exceeded',
+                ]);
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }

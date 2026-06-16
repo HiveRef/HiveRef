@@ -1,6 +1,8 @@
 <?php
 
 use App\Actions\Github\CreateBranch;
+use App\Enums\SubTaskStatus;
+use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
@@ -49,6 +51,19 @@ test('it returns false on github api failure', function () {
     $result = $this->action->execute('testuser/test-repo', 'swarm/feature', $this->user);
 
     expect($result)->toBeFalse();
+});
+
+test('it pauses subtask on rate limit when subtask is provided', function () {
+    $subTask = ProjectSubTask::factory()->create();
+
+    Http::fake([
+        'api.github.com/repos/*' => Http::response([], 429, ['Retry-After' => '60']),
+    ]);
+
+    $result = $this->action->execute('testuser/test-repo', 'swarm/feature', $this->user, $subTask);
+
+    expect($result)->toBeFalse();
+    expect($subTask->refresh()->status)->toBe(SubTaskStatus::Paused);
 });
 
 test('it returns false when user has no github token', function () {

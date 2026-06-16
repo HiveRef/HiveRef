@@ -47,10 +47,12 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
+            "bash -c 'command -v npx >/dev/null 2>&1 || { echo >&2 \"[HiveRef] npx not found. Use \\\"docker compose up -d\\\" to run in containers, or install Node.js for local dev.\"; exit 1; }'",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"npm run dev\" --names=server,vite --kill-others"
         ],
         "dev:queue": [
             "Composer\\Config::disableProcessTimeout",
+            "bash -c 'command -v npx >/dev/null 2>&1 || { echo >&2 \"[HiveRef] npx not found. Use \\\"docker compose up -d\\\" to run in containers, or install Node.js for local dev.\"; exit 1; }'",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"npm run dev\" --names=server,queue,vite --kill-others"
         ],
         "test": [

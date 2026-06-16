@@ -2,6 +2,7 @@
 
 namespace App\Actions\Github;
 
+use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +30,7 @@ class MergePullRequest
         }
 
         $subTask->update([
-            'status' => 'merged',
+            'status' => SubTaskStatus::Merged,
             'codespace_id' => null,
         ]);
 

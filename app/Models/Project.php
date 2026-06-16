@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProjectStatus;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,13 @@ class Project extends Model
         'github_repo_id', 'github_repo_name', 'github_repo_full_name',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => ProjectStatus::class,
+        ];
+    }
 
     public function user(): BelongsTo
     {

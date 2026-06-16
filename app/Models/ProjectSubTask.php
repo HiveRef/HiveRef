@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SubTaskStatus;
 use Database\Factories\ProjectSubTaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,13 @@ class ProjectSubTask extends Model
         'project_task_id', 'title', 'description', 'status',
         'branch_name', 'codespace_id', 'pr_url', 'error_message',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => SubTaskStatus::class,
+        ];
+    }
 
     public function task(): BelongsTo
     {

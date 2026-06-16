@@ -1,6 +1,8 @@
 <?php
 
 use App\Actions\Swarm\AnalyzeMacroPrompt;
+use App\Enums\SubTaskStatus;
+use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\ProjectTask;
 
@@ -8,7 +10,7 @@ beforeEach(function () {
     $this->project = Project::factory()->create();
     $this->task = ProjectTask::factory()->create([
         'project_id' => $this->project->id,
-        'status' => 'analyzing_prompt',
+        'status' => TaskStatus::AnalyzingPrompt,
     ]);
     $this->action = app(AnalyzeMacroPrompt::class);
 });
@@ -29,10 +31,10 @@ test('it analyzes macro prompt and creates atomic sub-tasks', function () {
     $this->action->execute($this->task);
 
     $this->task->refresh();
-    expect($this->task->status)->toBe('swarm_active')
+    expect($this->task->status)->toBe(TaskStatus::SwarmActive)
         ->and($this->task->subTasks)->toHaveCount(3)
         ->and($this->task->subTasks[0]->title)->toBe('Implement user authentication')
-        ->and($this->task->subTasks[0]->status)->toBe('pending');
+        ->and($this->task->subTasks[0]->status)->toBe(SubTaskStatus::Pending);
 });
 
 test('it marks task as failed when llm response is invalid', function () {
@@ -45,7 +47,7 @@ test('it marks task as failed when llm response is invalid', function () {
     $this->action->execute($this->task);
 
     $this->task->refresh();
-    expect($this->task->status)->toBe('failed')
+    expect($this->task->status)->toBe(TaskStatus::Failed)
         ->and($this->task->subTasks)->toHaveCount(0);
 });
 
@@ -57,7 +59,7 @@ test('it marks task as failed on api timeout', function () {
     $this->action->execute($this->task);
 
     $this->task->refresh();
-    expect($this->task->status)->toBe('failed');
+    expect($this->task->status)->toBe(TaskStatus::Failed);
 });
 
 test('it handles empty sub-tasks array gracefully', function () {
@@ -70,6 +72,6 @@ test('it handles empty sub-tasks array gracefully', function () {
     $this->action->execute($this->task);
 
     $this->task->refresh();
-    expect($this->task->status)->toBe('swarm_active')
+    expect($this->task->status)->toBe(TaskStatus::SwarmActive)
         ->and($this->task->subTasks)->toHaveCount(0);
 });

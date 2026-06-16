@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TaskStatus;
 use Database\Factories\ProjectTaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,13 @@ class ProjectTask extends Model
     protected $fillable = [
         'project_id', 'prompt', 'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => TaskStatus::class,
+        ];
+    }
 
     public function project(): BelongsTo
     {

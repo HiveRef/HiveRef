@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ProjectStatus;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,7 +20,7 @@ class ProjectFactory extends Factory
             'user_id' => User::factory(),
             'name' => fake()->words(3, true),
             'description' => fake()->sentence(),
-            'status' => 'pending',
+            'status' => ProjectStatus::Pending,
         ];
     }
 

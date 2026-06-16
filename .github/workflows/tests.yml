@@ -60,8 +60,16 @@ jobs:
           echo "DB_USERNAME=hiveref" >> .env
           echo "DB_PASSWORD=hiveref" >> .env
 
-      - name: Run migrations
-        run: php artisan migrate --force
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Build frontend assets
+        run: |
+          npm ci --ignore-scripts
+          npm run build
 
       - name: Execute tests (Pest)
         run: php artisan test --coverage --min=80

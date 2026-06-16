@@ -34,5 +34,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/{project}/secrets', [ProjectController::class, 'storeSecret']);
     });
 
+    Route::get('/review', [ProjectController::class, 'review'])->name('review.index');
+
+    Route::post('/sub-tasks/{subTask}/approve', [ProjectController::class, 'approveSubTask'])->name('sub-tasks.approve');
+    Route::post('/sub-tasks/{subTask}/reject', [ProjectController::class, 'rejectSubTask'])->name('sub-tasks.reject');
+
     Route::get('/github/repositories', [ProjectController::class, 'repositories']);
 });

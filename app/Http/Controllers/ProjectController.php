@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Github\MergePullRequest;
 use App\Actions\Github\StoreApiSecrets;
+use App\Enums\SubTaskStatus;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
+use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -139,5 +142,50 @@ class ProjectController extends Controller
         }
 
         return redirect("/projects/{$project->id}");
+    }
+
+    public function review()
+    {
+        $subTasks = ProjectSubTask::where('status', SubTaskStatus::AwaitingReview)
+            ->with('task.project')
+            ->whereHas('task.project', fn ($q) => $q->where('user_id', auth()->id()))
+            ->latest()
+            ->get();
+
+        $projects = Project::where('user_id', auth()->id())->with('tasks.subTasks')->latest()->get();
+
+        return Inertia::render('Review/Index', [
+            'subTasks' => $subTasks,
+            'projects' => $projects,
+        ]);
+    }
+
+    public function approveSubTask(ProjectSubTask $subTask)
+    {
+        if ($subTask->task->project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $merged = app(MergePullRequest::class)->execute($subTask, auth()->user());
+
+        if (! $merged) {
+            return back()->withErrors(['message' => 'Failed to merge pull request']);
+        }
+
+        return back();
+    }
+
+    public function rejectSubTask(ProjectSubTask $subTask)
+    {
+        if ($subTask->task->project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $subTask->update([
+            'status' => SubTaskStatus::Failed,
+            'error_message' => 'Rejected by user',
+        ]);
+
+        return back();
     }
 }

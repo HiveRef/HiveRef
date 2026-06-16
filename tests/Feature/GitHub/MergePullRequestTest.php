@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Github\MergePullRequest;
+use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -25,7 +26,7 @@ test('it merges a pull request and deletes the codespace', function () {
     expect($result)->toBeTrue();
 
     $this->subTask->refresh();
-    expect($this->subTask->status)->toBe('merged')
+    expect($this->subTask->status)->toBe(SubTaskStatus::Merged)
         ->and($this->subTask->codespace_id)->toBeNull();
 
     Http::assertSent(function ($request) use ($prUrl) {
@@ -47,5 +48,5 @@ test('it returns false when merge fails', function () {
     $result = $this->action->execute($this->subTask, $this->user);
 
     expect($result)->toBeFalse();
-    expect($this->subTask->refresh()->status)->toBe('awaiting_review');
+    expect($this->subTask->refresh()->status)->toBe(SubTaskStatus::AwaitingReview);
 });

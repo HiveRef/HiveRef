@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SubTaskStatus;
 use App\Jobs\ProvisionSubTaskCodespace;
 use App\Models\ProjectSubTask;
 use App\Models\User;
@@ -9,10 +10,9 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     $this->user = User::factory()->github()->create();
     $this->subTask = ProjectSubTask::factory()->create([
-        'status' => 'pending',
+        'status' => SubTaskStatus::Pending,
         'branch_name' => 'feature/test-feature',
     ]);
-    // Link the project to a GitHub repository
     $project = $this->subTask->task->project;
     $project->update([
         'github_repo_full_name' => 'testuser/test-repo',
@@ -33,7 +33,7 @@ test('it provisions a codespace for a sub-task', function () {
     $job->handle();
 
     $this->subTask->refresh();
-    expect($this->subTask->status)->toBe('provisioning')
+    expect($this->subTask->status)->toBe(SubTaskStatus::Provisioning)
         ->and($this->subTask->codespace_id)->not->toBeNull();
 });
 
@@ -46,7 +46,7 @@ test('it marks sub-task as failed on codespace creation error', function () {
     $job->handle();
 
     $this->subTask->refresh();
-    expect($this->subTask->status)->toBe('failed')
+    expect($this->subTask->status)->toBe(SubTaskStatus::Failed)
         ->and($this->subTask->error_message)->not->toBeNull();
 });
 

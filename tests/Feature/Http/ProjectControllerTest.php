@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -57,7 +58,7 @@ test('user can submit a macro prompt for a project', function () {
 
     $this->assertDatabaseHas('project_tasks', [
         'project_id' => $project->id,
-        'status' => 'analyzing_prompt',
+        'status' => TaskStatus::AnalyzingPrompt->value,
     ]);
 });
 

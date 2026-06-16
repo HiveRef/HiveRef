@@ -15,6 +15,7 @@
         }
     },
     "postCreateCommand": "composer install && npm install",
+    "postStartCommand": "gh cs ports visibility 5174:public 8000:public",
     "customizations": {
         "vscode": {
             "extensions": [

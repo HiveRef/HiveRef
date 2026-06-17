@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
+use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -25,13 +27,19 @@ test('user can create a project', function () {
     $response = $this->post('/projects', [
         'name' => 'My Awesome Project',
         'description' => 'Building something great',
+        'github_repo_id' => '123456',
+        'github_repo_name' => 'my-repo',
+        'github_repo_full_name' => 'user/my-repo',
     ]);
 
-    $response->assertRedirect('/projects');
+    $response->assertRedirect();
 
     $this->assertDatabaseHas('projects', [
         'user_id' => $this->user->id,
         'name' => 'My Awesome Project',
+        'github_repo_id' => '123456',
+        'github_repo_name' => 'my-repo',
+        'github_repo_full_name' => 'user/my-repo',
     ]);
 });
 
@@ -115,4 +123,45 @@ test('user can store an api key secret to github', function () {
     Http::assertSent(function ($request) {
         return str_contains($request->url(), 'actions/secrets/OPENAI_API_KEY');
     });
+});
+
+test('user can approve an awaiting review subtask', function () {
+    $subTask = ProjectSubTask::factory()->awaitingReview()->create();
+    $subTask->task->project->update(['user_id' => $this->user->id]);
+
+    Http::fake([
+        "{$subTask->pr_url}/merge" => Http::response(['merged' => true], 200),
+        'api.github.com/user/codespaces/*' => Http::response([], 202),
+    ]);
+
+    $this->post("/sub-tasks/{$subTask->id}/approve")
+        ->assertRedirect();
+
+    expect($subTask->refresh()->status)->toBe(SubTaskStatus::Merged);
+});
+
+test('user cannot approve another users subtask', function () {
+    $otherUser = User::factory()->create();
+    $subTask = ProjectSubTask::factory()->awaitingReview()->create();
+    $subTask->task->project->update(['user_id' => $otherUser->id]);
+
+    $this->post("/sub-tasks/{$subTask->id}/approve")
+        ->assertStatus(403);
+});
+
+test('user can reject an awaiting review subtask', function () {
+    $subTask = ProjectSubTask::factory()->awaitingReview()->create();
+    $subTask->task->project->update(['user_id' => $this->user->id]);
+
+    $this->post("/sub-tasks/{$subTask->id}/reject")
+        ->assertRedirect();
+
+    expect($subTask->refresh()->status)->toBe(SubTaskStatus::Failed)
+        ->and($subTask->error_message)->toBe('Rejected by user');
+});
+
+test('user can view the review page', function () {
+    $this->get('/review')
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page->component('Review/Index'));
 });

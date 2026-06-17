@@ -24,6 +24,7 @@ export default defineConfig({
         cors: true,
         watch: {
             ignored: ['**/storage/framework/views/**'],
+            usePolling: true,
         },
         ...(codespaceUrl ? {
             allowedHosts: [codespaceUrl.replace('https://', '')],

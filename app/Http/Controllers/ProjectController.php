@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Github\CreateRepo;
+use App\Actions\Github\MergePullRequest;
 use App\Actions\Github\StoreApiSecrets;
+use App\Enums\SubTaskStatus;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
+use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -19,8 +23,37 @@ class ProjectController extends Controller
             ->latest()
             ->get();
 
+        $githubRepos = [];
+        $token = auth()->user()->github_token;
+
+        if ($token) {
+            $response = Http::withToken($token)
+                ->get('https://api.github.com/user/repos', [
+                    'per_page' => 100,
+                    'sort' => 'updated',
+                    'direction' => 'desc',
+                ]);
+
+            if ($response->successful()) {
+                $githubRepos = collect($response->json())->map(fn ($repo) => [
+                    'id' => $repo['id'],
+                    'name' => $repo['name'],
+                    'full_name' => $repo['full_name'],
+                    'description' => $repo['description'],
+                    'language' => $repo['language'],
+                    'stars' => $repo['stargazers_count'],
+                    'forks' => $repo['forks_count'],
+                    'private' => $repo['private'],
+                    'html_url' => $repo['html_url'],
+                    'default_branch' => $repo['default_branch'],
+                    'updated_at' => $repo['updated_at'],
+                ])->values()->toArray();
+            }
+        }
+
         return Inertia::render('Projects/Index', [
             'projects' => $projects,
+            'githubRepos' => $githubRepos,
         ]);
     }
 
@@ -29,15 +62,21 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'github_repo_id' => ['required', 'string'],
+            'github_repo_name' => ['required', 'string'],
+            'github_repo_full_name' => ['required', 'string'],
         ]);
 
         $project = Project::create([
             'user_id' => auth()->id(),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'github_repo_id' => $validated['github_repo_id'],
+            'github_repo_name' => $validated['github_repo_name'],
+            'github_repo_full_name' => $validated['github_repo_full_name'],
         ]);
 
-        return redirect('/projects');
+        return redirect("/projects/{$project->id}");
     }
 
     public function show(Project $project)
@@ -139,5 +178,106 @@ class ProjectController extends Controller
         }
 
         return redirect("/projects/{$project->id}");
+    }
+
+    public function review()
+    {
+        $subTasks = ProjectSubTask::where('status', SubTaskStatus::AwaitingReview)
+            ->with('task.project')
+            ->whereHas('task.project', fn ($q) => $q->where('user_id', auth()->id()))
+            ->latest()
+            ->get();
+
+        $projects = Project::where('user_id', auth()->id())->with('tasks.subTasks')->latest()->get();
+
+        return Inertia::render('Review/Index', [
+            'subTasks' => $subTasks,
+            'projects' => $projects,
+        ]);
+    }
+
+    public function deploySwarm(Request $request)
+    {
+        $validated = $request->validate([
+            'prompt' => ['required', 'string', 'max:5000'],
+            'github_repo_id' => ['required', 'string'],
+            'github_repo_name' => ['required', 'string'],
+            'github_repo_full_name' => ['required', 'string'],
+        ]);
+
+        $name = str($validated['prompt'])->before('.')->before("\n")->limit(100)->toString();
+
+        $project = Project::create([
+            'user_id' => auth()->id(),
+            'name' => $name,
+            'description' => $validated['prompt'],
+            'github_repo_id' => $validated['github_repo_id'],
+            'github_repo_name' => $validated['github_repo_name'],
+            'github_repo_full_name' => $validated['github_repo_full_name'],
+        ]);
+
+        $task = ProjectTask::create([
+            'project_id' => $project->id,
+            'prompt' => $validated['prompt'],
+        ]);
+
+        ProcessMacroPrompt::dispatch($task, auth()->user());
+
+        return redirect("/projects/{$project->id}");
+    }
+
+    public function approveSubTask(ProjectSubTask $subTask)
+    {
+        if ($subTask->task->project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $merged = app(MergePullRequest::class)->execute($subTask, auth()->user());
+
+        if (! $merged) {
+            return back()->withErrors(['message' => 'Failed to merge pull request']);
+        }
+
+        return back();
+    }
+
+    public function rejectSubTask(ProjectSubTask $subTask)
+    {
+        if ($subTask->task->project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $subTask->update([
+            'status' => SubTaskStatus::Failed,
+            'error_message' => 'Rejected by user',
+        ]);
+
+        return back();
+    }
+
+    public function createRepo(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_-]+$/'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'private' => ['boolean'],
+        ]);
+
+        $repo = app(CreateRepo::class)->execute(
+            user: auth()->user(),
+            name: $validated['name'],
+            description: $validated['description'] ?? null,
+            private: $validated['private'] ?? true,
+        );
+
+        if (! $repo) {
+            if (! auth()->user()->github_token) {
+                return response()->json(['error' => 'GitHub not connected'], 400);
+            }
+
+            return response()->json(['error' => 'Failed to create repository'], 422);
+        }
+
+        return response()->json($repo, 201);
     }
 }

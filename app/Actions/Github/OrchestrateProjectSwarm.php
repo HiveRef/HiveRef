@@ -26,6 +26,7 @@ class OrchestrateProjectSwarm
 
         if (! $repoFullName) {
             $task->update(['status' => TaskStatus::Failed]);
+
             return;
         }
 
@@ -51,6 +52,7 @@ class OrchestrateProjectSwarm
                         'error_message' => 'Failed to create branch in repository',
                     ]);
                 }
+
                 continue;
             }
 

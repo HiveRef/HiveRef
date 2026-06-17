@@ -24,6 +24,7 @@ class HandleInertiaRequests extends Middleware
                         'id' => $request->user()->id,
                         'username' => $request->user()->username,
                         'avatar' => $request->user()->avatar,
+                        'has_github_token' => $request->user()->github_token !== null,
                     ]
                     : null,
             ],

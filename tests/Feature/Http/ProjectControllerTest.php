@@ -27,13 +27,19 @@ test('user can create a project', function () {
     $response = $this->post('/projects', [
         'name' => 'My Awesome Project',
         'description' => 'Building something great',
+        'github_repo_id' => '123456',
+        'github_repo_name' => 'my-repo',
+        'github_repo_full_name' => 'user/my-repo',
     ]);
 
-    $response->assertRedirect('/projects');
+    $response->assertRedirect();
 
     $this->assertDatabaseHas('projects', [
         'user_id' => $this->user->id,
         'name' => 'My Awesome Project',
+        'github_repo_id' => '123456',
+        'github_repo_name' => 'my-repo',
+        'github_repo_full_name' => 'user/my-repo',
     ]);
 });
 

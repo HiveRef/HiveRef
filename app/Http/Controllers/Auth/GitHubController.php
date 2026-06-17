@@ -18,6 +18,17 @@ class GitHubController extends Controller
     {
         $githubUser = Socialite::driver('github')->user();
 
+        if (Auth::check()) {
+            $user = Auth::user();
+            $user->update([
+                'github_id' => $githubUser->getId(),
+                'github_token' => $githubUser->token,
+                'avatar' => $githubUser->getAvatar() ?? $user->avatar,
+            ]);
+
+            return redirect()->intended('/');
+        }
+
         $user = User::updateOrCreate(
             ['github_id' => $githubUser->getId()],
             [

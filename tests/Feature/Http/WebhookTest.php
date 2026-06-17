@@ -1,7 +1,10 @@
 <?php
 
 use App\Enums\SubTaskStatus;
+use App\Models\Project;
 use App\Models\ProjectSubTask;
+use App\Models\ProjectTask;
+use App\Models\User;
 
 beforeEach(function () {
     config(['services.github.webhook_secret' => 'test-secret']);
@@ -41,10 +44,20 @@ test('it handles codespace created event and updates subtask', function () {
     expect($subTask->refresh()->status)->toBe(SubTaskStatus::InProgress);
 });
 
-test('it handles pull request opened event and updates subtask', function () {
+test('it handles pull request opened event and stops codespace', function () {
+    $user = User::factory()->github()->create();
+    $project = Project::factory()->create(['user_id' => $user->id]);
+    $task = ProjectTask::factory()->create(['project_id' => $project->id]);
+
+    Http::fake([
+        'api.github.com/user/codespaces/*/stop' => Http::response([], 202),
+    ]);
+
     $subTask = ProjectSubTask::factory()->create([
+        'project_task_id' => $task->id,
         'branch_name' => 'swarm/implement-auth',
         'status' => SubTaskStatus::InProgress,
+        'codespace_id' => 'cs_active_123',
     ]);
 
     $payload = [
@@ -64,6 +77,10 @@ test('it handles pull request opened event and updates subtask', function () {
     $subTask->refresh();
     expect($subTask->status)->toBe(SubTaskStatus::AwaitingReview)
         ->and($subTask->pr_url)->toBe('https://github.com/testuser/test-repo/pull/42');
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/codespaces/cs_active_123/stop');
+    });
 });
 
 test('it handles pull request merged event and updates subtask', function () {

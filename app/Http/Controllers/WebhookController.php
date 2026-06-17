@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\SubTaskStatus;
 use App\Models\ProjectSubTask;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class WebhookController extends Controller
 {
@@ -37,6 +38,12 @@ class WebhookController extends Controller
         $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $secret);
 
         return hash_equals($expected, $signature);
+    }
+
+    private function stopCodespace(string $codespaceId, string $token): void
+    {
+        Http::withToken($token)
+            ->post("https://api.github.com/user/codespaces/{$codespaceId}/stop");
     }
 
     private function handleCodespaceEvent(array $payload): void
@@ -81,10 +88,7 @@ class WebhookController extends Controller
         }
 
         match ($action) {
-            'opened' => $subTask->update([
-                'status' => SubTaskStatus::AwaitingReview,
-                'pr_url' => $prUrl,
-            ]),
+            'opened' => $this->handlePrOpened($subTask, $prUrl),
             'closed' => $subTask->update([
                 'status' => ($payload['pull_request']['merged'] ?? false)
                     ? SubTaskStatus::Merged
@@ -95,5 +99,21 @@ class WebhookController extends Controller
             ]),
             default => null,
         };
+    }
+
+    private function handlePrOpened(ProjectSubTask $subTask, string $prUrl): void
+    {
+        if ($subTask->codespace_id) {
+            $token = $subTask->task->project->user->github_token ?? null;
+
+            if ($token) {
+                $this->stopCodespace($subTask->codespace_id, $token);
+            }
+        }
+
+        $subTask->update([
+            'status' => SubTaskStatus::AwaitingReview,
+            'pr_url' => $prUrl,
+        ]);
     }
 }

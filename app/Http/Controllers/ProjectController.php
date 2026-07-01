@@ -200,10 +200,26 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'max:5000'],
+            'model' => ['nullable', 'string', 'max:255'],
+            'api_key' => ['nullable', 'string', 'max:5000'],
             'github_repo_id' => ['required', 'string'],
             'github_repo_name' => ['required', 'string'],
             'github_repo_full_name' => ['required', 'string'],
         ]);
+
+        $model = $validated['model'] ?? 'github/deepseek-v4';
+        $hasCustomApiKey = ! empty($validated['api_key']);
+
+        if ($hasCustomApiKey) {
+            $parts = explode('/', $validated['github_repo_full_name']);
+            app(StoreApiSecrets::class)->execute(
+                user: auth()->user(),
+                repoOwner: $parts[0],
+                repoName: $parts[1],
+                secretName: 'CUSTOM_LLM_API_KEY',
+                secretValue: $validated['api_key'],
+            );
+        }
 
         $name = str($validated['prompt'])->before('.')->before("\n")->limit(100)->toString();
 
@@ -219,6 +235,8 @@ class ProjectController extends Controller
         $task = ProjectTask::create([
             'project_id' => $project->id,
             'prompt' => $validated['prompt'],
+            'model' => $model,
+            'has_custom_api_key' => $hasCustomApiKey,
         ]);
 
         ProcessMacroPrompt::dispatch($task, auth()->user());

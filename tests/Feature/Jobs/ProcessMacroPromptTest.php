@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\ProjectTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -27,16 +28,12 @@ beforeEach(function () {
 });
 
 test('it analyzes prompt creates branches and dispatches provisioning for sub-tasks', function () {
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com')) {
-            return Http::response([
-                'choices' => [['message' => ['content' => json_encode([
-                    ['title' => 'Implement user authentication', 'description' => 'Auth endpoints'],
-                    ['title' => 'Build dashboard UI', 'description' => 'Main dashboard'],
-                ])]]],
-            ], 200);
-        }
+    Process::fake(['*' => Process::result(json_encode([
+        ['title' => 'Implement user authentication', 'description' => 'Auth endpoints'],
+        ['title' => 'Build dashboard UI', 'description' => 'Main dashboard'],
+    ]))]);
 
+    Http::fake(function ($request) {
         if (str_contains($request->url(), '/git/refs') && $request->method() === 'POST') {
             return Http::response([], 201);
         }
@@ -67,15 +64,11 @@ test('it analyzes prompt creates branches and dispatches provisioning for sub-ta
 });
 
 test('it marks sub-task as failed when branch creation fails', function () {
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com')) {
-            return Http::response([
-                'choices' => [['message' => ['content' => json_encode([
-                    ['title' => 'Implement auth', 'description' => 'Auth system'],
-                ])]]],
-            ], 200);
-        }
+    Process::fake(['*' => Process::result(json_encode([
+        ['title' => 'Implement auth', 'description' => 'Auth system'],
+    ]))]);
 
+    Http::fake(function ($request) {
         return Http::response([], 500);
     });
 
@@ -92,15 +85,11 @@ test('it marks sub-task as failed when branch creation fails', function () {
 });
 
 test('it pauses sub-task when branch creation is rate limited', function () {
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com')) {
-            return Http::response([
-                'choices' => [['message' => ['content' => json_encode([
-                    ['title' => 'Implement auth', 'description' => 'Auth system'],
-                ])]]],
-            ], 200);
-        }
+    Process::fake(['*' => Process::result(json_encode([
+        ['title' => 'Implement auth', 'description' => 'Auth system'],
+    ]))]);
 
+    Http::fake(function ($request) {
         return Http::response([], 429, ['Retry-After' => '60']);
     });
 
@@ -117,13 +106,9 @@ test('it pauses sub-task when branch creation is rate limited', function () {
 });
 
 test('it handles empty sub-tasks from analysis gracefully', function () {
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com')) {
-            return Http::response([
-                'choices' => [['message' => ['content' => '[]']]],
-            ], 200);
-        }
+    Process::fake(['*' => Process::result('[]')]);
 
+    Http::fake(function ($request) {
         return Http::response([], 404);
     });
 
@@ -139,9 +124,7 @@ test('it handles empty sub-tasks from analysis gracefully', function () {
 });
 
 test('it stops when analysis fails', function () {
-    Http::fake([
-        'api.openai.com/*' => Http::response([], 408),
-    ]);
+    Process::fake(['*' => Process::result('', 1)]);
 
     $job = new ProcessMacroPrompt($this->task, $this->user);
     $job->handle();
@@ -157,13 +140,9 @@ test('it stops when analysis fails', function () {
 test('it fails task when project has no linked repository', function () {
     $this->project->update(['github_repo_full_name' => null]);
 
-    Http::fake([
-        'api.openai.com/*' => Http::response([
-            'choices' => [['message' => ['content' => json_encode([
-                ['title' => 'Task', 'description' => 'Desc'],
-            ])]]],
-        ], 200),
-    ]);
+    Process::fake(['*' => Process::result(json_encode([
+        ['title' => 'Task', 'description' => 'Desc'],
+    ]))]);
 
     $job = new ProcessMacroPrompt($this->task, $this->user);
     $job->handle();

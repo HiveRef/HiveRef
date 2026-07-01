@@ -56,6 +56,8 @@ class OrchestrateProjectSwarm
                 continue;
             }
 
+            app(SetupCodespaceDevcontainer::class)->execute($subTask, $user);
+
             ProvisionSubTaskCodespace::dispatch($subTask, $user);
         }
     }

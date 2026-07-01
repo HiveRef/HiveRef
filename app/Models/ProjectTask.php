@@ -15,7 +15,7 @@ class ProjectTask extends Model
     use HasFactory;
 
     protected $fillable = [
-        'project_id', 'prompt', 'status',
+        'project_id', 'prompt', 'model', 'has_custom_api_key', 'status',
     ];
 
     protected function casts(): array

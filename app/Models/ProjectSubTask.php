@@ -14,7 +14,7 @@ class ProjectSubTask extends Model
     use HasFactory;
 
     protected $fillable = [
-        'project_task_id', 'title', 'description', 'status',
+        'project_task_id', 'title', 'description', 'model', 'has_custom_api_key', 'status',
         'branch_name', 'codespace_id', 'pr_url', 'error_message',
     ];
 

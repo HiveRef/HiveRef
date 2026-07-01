@@ -6,38 +6,19 @@ use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
-use Illuminate\Support\Facades\Http;
 
 class AnalyzeMacroPrompt
 {
     public function execute(ProjectTask $task): void
     {
         try {
-            $response = Http::timeout(30)
-                ->withToken(config('services.openai.api_key'))
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => 'gpt-4o-mini',
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'You are a project planner. Break the following macro prompt into atomic, independent sub-tasks. Return ONLY a JSON array of objects with "title" and "description" keys. No markdown, no code fences.',
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $task->prompt,
-                        ],
-                    ],
-                    'temperature' => 0.3,
-                ]);
+            $systemPrompt = 'You are a project planner. Break the following macro prompt
+            into atomic, independent sub-tasks. Return ONLY a JSON array of objects with 
+            "title" and "description" keys. No markdown, no code fences.';
 
-            if ($response->failed()) {
-                $task->update(['status' => TaskStatus::Failed]);
+            $fullPrompt = "{$systemPrompt}\n\n{$task->prompt}";
 
-                return;
-            }
-
-            $content = $response->json('choices.0.message.content');
-            $subTasks = json_decode($content, true);
+            $subTasks = app(CallOpenCode::class)->execute($fullPrompt);
 
             if (! is_array($subTasks)) {
                 $task->update(['status' => TaskStatus::Failed]);
@@ -54,6 +35,8 @@ class AnalyzeMacroPrompt
                     'project_task_id' => $task->id,
                     'title' => $subTask['title'],
                     'description' => $subTask['description'] ?? null,
+                    'model' => $task->model,
+                    'has_custom_api_key' => $task->has_custom_api_key,
                     'status' => SubTaskStatus::Pending,
                 ]);
             }

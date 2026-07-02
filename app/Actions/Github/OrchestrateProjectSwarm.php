@@ -56,7 +56,16 @@ class OrchestrateProjectSwarm
                 continue;
             }
 
-            app(SetupCodespaceDevcontainer::class)->execute($subTask, $user);
+            $setupOk = app(SetupCodespaceDevcontainer::class)->execute($subTask, $user);
+
+            if (! $setupOk) {
+                $subTask->update([
+                    'status' => SubTaskStatus::Failed,
+                    'error_message' => 'Failed to commit devcontainer/opencode config to branch',
+                ]);
+
+                continue;
+            }
 
             ProvisionSubTaskCodespace::dispatch($subTask, $user);
         }

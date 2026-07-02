@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     && pecl install redis \
     && docker-php-ext-enable redis
 
-RUN curl -fsSL https://opencode.ai/install | bash
+RUN set -eux; \
+    curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh; \
+    bash /tmp/opencode-install.sh; \
+    rm -f /tmp/opencode-install.sh
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

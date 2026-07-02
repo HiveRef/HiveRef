@@ -100,6 +100,37 @@ test('it marks sub-task as failed when branch creation fails', function () {
     Queue::assertNotPushed(ProvisionSubTaskCodespace::class);
 });
 
+test('it marks sub-task as failed when devcontainer setup fails', function () {
+    Process::fake(['*' => Process::result(json_encode([
+        ['title' => 'Implement auth', 'description' => 'Auth system'],
+    ]))]);
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), '/git/refs') && $request->method() === 'POST') {
+            return Http::response([], 201);
+        }
+
+        if (str_contains($request->url(), 'api.github.com/repos')) {
+            return Http::response([
+                'default_branch' => 'main',
+                'object' => ['sha' => 'abcdef1234567890abcdef1234567890abcdef12'],
+            ], 200);
+        }
+
+        return Http::response([], 404);
+    });
+
+    app(OrchestrateProjectSwarm::class)->execute($this->task);
+
+    $this->task->refresh();
+
+    expect($this->task->status)->toBe(TaskStatus::SwarmActive);
+    expect($this->task->subTasks[0]->status)->toBe(SubTaskStatus::Failed);
+    expect($this->task->subTasks[0]->error_message)->toBe('Failed to commit devcontainer/opencode config to branch');
+
+    Queue::assertNotPushed(ProvisionSubTaskCodespace::class);
+});
+
 test('it pauses sub-task when branch creation is rate limited', function () {
     Process::fake(['*' => Process::result(json_encode([
         ['title' => 'Implement auth', 'description' => 'Auth system'],

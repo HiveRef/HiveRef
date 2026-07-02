@@ -118,16 +118,29 @@ class SetupCodespaceDevcontainer
 
     private function getLatestCommitSha(string $token, string $repoFullName, string $branchName): ?array
     {
-        $response = Http::withToken($token)
+        $refResponse = Http::withToken($token)
             ->get("https://api.github.com/repos/{$repoFullName}/git/refs/heads/{$branchName}");
 
-        if ($response->failed()) {
+        if ($refResponse->failed()) {
+            return null;
+        }
+
+        $commitSha = $refResponse->json('object.sha');
+
+        if (! $commitSha) {
+            return null;
+        }
+
+        $commitResponse = Http::withToken($token)
+            ->get("https://api.github.com/repos/{$repoFullName}/git/commits/{$commitSha}");
+
+        if ($commitResponse->failed()) {
             return null;
         }
 
         return [
-            'commit_sha' => $response->json('object.sha'),
-            'tree_sha' => null,
+            'commit_sha' => $commitSha,
+            'tree_sha' => $commitResponse->json('tree.sha'),
         ];
     }
 

@@ -14,8 +14,8 @@ return new class extends Migration
         });
 
         Schema::table('project_sub_tasks', function (Blueprint $table) {
-            $table->string('model')->nullable()->after('description');
-            $table->boolean('has_custom_api_key')->nullable()->default(false)->after('model');
+            $table->string('model')->default('github/deepseek-v4')->after('description');
+            $table->boolean('has_custom_api_key')->default(false)->after('model');
         });
     }
 

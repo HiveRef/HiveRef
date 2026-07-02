@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
+use App\Providers\HorizonServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
 test('horizon gate denies guests without user', function () {
-    $provider = new App\Providers\HorizonServiceProvider(app());
+    $provider = new HorizonServiceProvider(app());
     $ref = new ReflectionMethod($provider, 'gate');
     $ref->setAccessible(true);
     $ref->invoke($provider);
@@ -13,7 +16,7 @@ test('horizon gate denies guests without user', function () {
 });
 
 test('horizon gate denies authenticated user without allowed email', function () {
-    $provider = new App\Providers\HorizonServiceProvider(app());
+    $provider = new HorizonServiceProvider(app());
     $ref = new ReflectionMethod($provider, 'gate');
     $ref->setAccessible(true);
     $ref->invoke($provider);

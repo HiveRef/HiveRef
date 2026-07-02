@@ -5,6 +5,7 @@ use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\ProjectTask;
+use Illuminate\Support\Facades\Process;
 
 beforeEach(function () {
     $this->project = Project::factory()->create();
@@ -16,16 +17,12 @@ beforeEach(function () {
 });
 
 test('it analyzes macro prompt and creates atomic sub-tasks', function () {
-    $fakeResponse = [
-        ['title' => 'Implement user authentication', 'description' => 'Create login and register endpoints'],
-        ['title' => 'Setup database schema', 'description' => 'Create initial migrations for users'],
-        ['title' => 'Build dashboard UI', 'description' => 'Create the main dashboard component'],
-    ];
-
-    Http::fake([
-        'api.openai.com/*' => Http::response([
-            'choices' => [['message' => ['content' => json_encode($fakeResponse)]]],
-        ], 200),
+    Process::fake([
+        '*' => Process::result(json_encode([
+            ['title' => 'Implement user authentication', 'description' => 'Create login and register endpoints'],
+            ['title' => 'Setup database schema', 'description' => 'Create initial migrations for users'],
+            ['title' => 'Build dashboard UI', 'description' => 'Create the main dashboard component'],
+        ])),
     ]);
 
     $this->action->execute($this->task);
@@ -38,10 +35,8 @@ test('it analyzes macro prompt and creates atomic sub-tasks', function () {
 });
 
 test('it marks task as failed when llm response is invalid', function () {
-    Http::fake([
-        'api.openai.com/*' => Http::response([
-            'choices' => [['message' => ['content' => 'invalid json response']]],
-        ], 200),
+    Process::fake([
+        '*' => Process::result('invalid json response'),
     ]);
 
     $this->action->execute($this->task);
@@ -51,9 +46,9 @@ test('it marks task as failed when llm response is invalid', function () {
         ->and($this->task->subTasks)->toHaveCount(0);
 });
 
-test('it marks task as failed on api timeout', function () {
-    Http::fake([
-        'api.openai.com/*' => Http::response([], 408),
+test('it marks task as failed on process timeout', function () {
+    Process::fake([
+        '*' => Process::result('', 124),
     ]);
 
     $this->action->execute($this->task);
@@ -63,10 +58,8 @@ test('it marks task as failed on api timeout', function () {
 });
 
 test('it handles empty sub-tasks array gracefully', function () {
-    Http::fake([
-        'api.openai.com/*' => Http::response([
-            'choices' => [['message' => ['content' => '[]']]],
-        ], 200),
+    Process::fake([
+        '*' => Process::result('[]'),
     ]);
 
     $this->action->execute($this->task);

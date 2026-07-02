@@ -27,18 +27,36 @@ function GithubSvg({ size }: { size: number }) {
 export function PromptHub({ githubRepos = [] }: PromptHubProps) {
   const [prompt, setPrompt] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("claude-sonnet-4-6");
+  const [model, setModel] = useState("github/deepseek-v4");
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showRepoDropdown, setShowRepoDropdown] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const models = [
-    { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", badge: "LATEST" },
-    { id: "claude-opus-4-8", label: "Claude Opus 4.8", badge: "POWERFUL" },
-    { id: "gpt-4o", label: "GPT-4o", badge: null },
-    { id: "gemini-2-flash", label: "Gemini 2.0 Flash", badge: null },
+  const modelGroups = [
+    {
+      label: "OpenCode (Free)",
+      models: [
+        { id: "github/deepseek-v4", label: "DeepSeek V4", badge: "DEFAULT" },
+        { id: "opencode/big-pickle", label: "BigPickle", badge: null },
+      ],
+    },
+    {
+      label: "GitHub Models",
+      models: [
+        { id: "github/gpt-4o", label: "GPT-4o", badge: null },
+        { id: "github/gpt-4o-mini", label: "GPT-4o mini", badge: null },
+        { id: "github/gpt-4o-turbo", label: "GPT-4o Turbo", badge: null },
+        { id: "github/claude-sonnet-4", label: "Claude Sonnet 4", badge: null },
+        { id: "github/claude-opus-4", label: "Claude Opus 4", badge: null },
+        { id: "github/gemini-2.5-flash", label: "Gemini 2.5 Flash", badge: null },
+        { id: "github/gemini-2.5-pro", label: "Gemini 2.5 Pro", badge: null },
+        { id: "github/deepseek-v3", label: "DeepSeek V3", badge: null },
+      ],
+    },
   ];
+
+  const flatModels = modelGroups.flatMap(g => g.models);
 
   const charCount = prompt.length;
   const isReady = prompt.trim().length > 20 && selectedRepo !== null;
@@ -48,6 +66,8 @@ export function PromptHub({ githubRepos = [] }: PromptHubProps) {
     setSubmitting(true);
     router.post("/deploy-swarm", {
       prompt,
+      model,
+      api_key: apiKey || "",
       github_repo_id: String(selectedRepo.id),
       github_repo_name: selectedRepo.name,
       github_repo_full_name: selectedRepo.full_name,
@@ -111,29 +131,37 @@ export function PromptHub({ githubRepos = [] }: PromptHubProps) {
               }}
             >
               <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>
-                {models.find((m) => m.id === model)?.label ?? model}
+                {flatModels.find((m) => m.id === model)?.label ?? model}
               </span>
               <ChevronDown size={12} />
             </button>
             {showModelDropdown && (
               <div
-                className="absolute left-0 top-full mt-1 min-w-max rounded z-20"
+                className="absolute left-0 top-full mt-1 min-w-[240px] rounded z-20"
                 style={{ background: "#000000", border: "1px solid rgba(250,204,21,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}
               >
-                {models.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setModel(m.id); setShowModelDropdown(false); }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-white/5"
-                    style={{ color: m.id === model ? "#FACC15" : "#888890" }}
-                  >
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>{m.label}</span>
-                    {m.badge && (
-                      <span className="px-1.5 py-0.5 rounded" style={{ background: "rgba(250,204,21,0.15)", color: "#FACC15", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem" }}>
-                        {m.badge}
-                      </span>
-                    )}
-                  </button>
+                {modelGroups.map((group, gi) => (
+                  <div key={gi}>
+                    {gi > 0 && <div style={{ borderTop: "1px solid rgba(250,204,21,0.1)", margin: "4px 0" }} />}
+                    <div className="px-4 pt-2 pb-1" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: "#555560", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                      {group.label}
+                    </div>
+                    {group.models.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => { setModel(m.id); setShowModelDropdown(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-white/5"
+                        style={{ color: m.id === model ? "#FACC15" : "#888890" }}
+                      >
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>{m.label}</span>
+                        {m.badge && (
+                          <span className="px-1.5 py-0.5 rounded" style={{ background: "rgba(250,204,21,0.15)", color: "#FACC15", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem" }}>
+                            {m.badge}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}

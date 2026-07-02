@@ -165,3 +165,76 @@ test('user can view the review page', function () {
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page->component('Review/Index'));
 });
+
+test('user can deploy swarm with prompt and model selection', function () {
+    Http::fake([
+        'api.github.com/repos/*/actions/secrets/public-key' => Http::response([
+            'key' => base64_encode(sodium_crypto_box_keypair()),
+            'key_id' => 'test-key-id',
+        ], 200),
+        'api.github.com/repos/*' => Http::response([
+            'default_branch' => 'main',
+            'object' => ['sha' => 'abc123'],
+        ], 200),
+        '*' => Http::response([], 201),
+    ]);
+
+    Queue::fake();
+
+    $response = $this->post('/deploy-swarm', [
+        'prompt' => 'Build a web app with authentication',
+        'model' => 'github/deepseek-v4',
+        'api_key' => '',
+        'github_repo_id' => '12345',
+        'github_repo_name' => 'test-repo',
+        'github_repo_full_name' => 'user/test-repo',
+    ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('project_tasks', [
+        'prompt' => 'Build a web app with authentication',
+        'model' => 'github/deepseek-v4',
+        'has_custom_api_key' => false,
+    ]);
+
+    Queue::assertPushed(ProcessMacroPrompt::class, 1);
+});
+
+test('user can deploy swarm with custom api key stored as github secret', function () {
+    $keypair = sodium_crypto_box_keypair();
+    $publicKey = sodium_crypto_box_publickey($keypair);
+
+    Http::fake([
+        'api.github.com/repos/*/actions/secrets/public-key' => Http::response([
+            'key' => base64_encode($publicKey),
+            'key_id' => 'test-key-id',
+        ], 200),
+        'api.github.com/repos/*' => Http::response([
+            'default_branch' => 'main',
+            'object' => ['sha' => 'abc123'],
+        ], 200),
+        '*' => Http::response([], 201),
+    ]);
+
+    Queue::fake();
+
+    $response = $this->post('/deploy-swarm', [
+        'prompt' => 'Create a blog with custom API key',
+        'model' => 'opencode/big-pickle',
+        'api_key' => 'sk-custom-key-12345',
+        'github_repo_id' => '67890',
+        'github_repo_name' => 'custom-repo',
+        'github_repo_full_name' => 'user/custom-repo',
+    ]);
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('project_tasks', [
+        'prompt' => 'Create a blog with custom API key',
+        'model' => 'opencode/big-pickle',
+        'has_custom_api_key' => true,
+    ]);
+
+    Queue::assertPushed(ProcessMacroPrompt::class, 1);
+});

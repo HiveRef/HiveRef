@@ -36,7 +36,7 @@ class SetupCodespaceDevcontainer
         $container = [
             'name' => 'HiveRef Swarm Agent',
             'image' => 'mcr.microsoft.com/devcontainers/universal:2',
-            'postCreateCommand' => 'curl -fsSL https://opencode.ai/install | bash',
+            'postCreateCommand' => 'curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh && bash /tmp/opencode-install.sh && rm -f /tmp/opencode-install.sh',
             'customizations' => [
                 'vscode' => [
                     'extensions' => ['GitHub.copilot'],

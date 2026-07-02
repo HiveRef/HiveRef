@@ -212,13 +212,22 @@ class ProjectController extends Controller
 
         if ($hasCustomApiKey) {
             $parts = explode('/', $validated['github_repo_full_name']);
-            app(StoreApiSecrets::class)->execute(
+
+            if (count($parts) !== 2) {
+                return back()->withErrors(['message' => 'Invalid repository full name']);
+            }
+
+            $stored = app(StoreApiSecrets::class)->execute(
                 user: auth()->user(),
                 repoOwner: $parts[0],
                 repoName: $parts[1],
                 secretName: 'CUSTOM_LLM_API_KEY',
                 secretValue: $validated['api_key'],
             );
+
+            if (! $stored) {
+                return back()->withErrors(['message' => 'Failed to store secret on GitHub']);
+            }
         }
 
         $name = str($validated['prompt'])->before('.')->before("\n")->limit(100)->toString();

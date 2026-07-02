@@ -8,9 +8,11 @@ class CallOpenCode
 {
     public function execute(string $prompt): ?array
     {
-        $process = Process::timeout(60)
-            ->run("opencode \"{$prompt}\"");
-
+        try {
+            $process = Process::timeout(60)->run(['opencode', $prompt]);
+        } catch (\Throwable) {
+            return null;
+        }
         if (! $process->successful()) {
             return null;
         }

@@ -18,6 +18,11 @@ class ProjectSubTask extends Model
         'branch_name', 'codespace_id', 'pr_url', 'error_message',
     ];
 
+    protected $attributes = [
+        'model' => 'github/deepseek-v4',
+        'has_custom_api_key' => false,
+    ];
+
     protected function casts(): array
     {
         return [

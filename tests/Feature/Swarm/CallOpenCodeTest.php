@@ -19,7 +19,9 @@ test('it calls opencode cli with the given prompt and returns json', function ()
     ]);
 
     Process::assertRanTimes(function ($process) {
-        return str_contains($process->command, 'opencode');
+        $cmd = is_array($process->command) ? implode(' ', $process->command) : $process->command;
+
+        return str_contains($cmd, 'opencode');
     }, 1);
 });
 

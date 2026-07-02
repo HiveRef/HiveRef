@@ -39,6 +39,21 @@ test('it processes macro prompt, splits into atomic features and provisions code
             return Http::response([], 201);
         }
 
+        if (str_contains($request->url(), '/git/commits')) {
+            return Http::response([
+                'sha' => 'cdef0123456789abcdef0123456789abcdef0123',
+                'tree' => ['sha' => 'fedcba9876543210fedcba9876543210fedcba98'],
+            ], 200);
+        }
+
+        if (str_contains($request->url(), '/git/blobs')) {
+            return Http::response(['sha' => 'aabbccddee00112233445566778899aabbccddee'], 200);
+        }
+
+        if (str_contains($request->url(), '/git/trees')) {
+            return Http::response(['sha' => '11223344556677889900aabbccddee1122334455'], 200);
+        }
+
         if (str_contains($request->url(), 'api.github.com/repos')) {
             return Http::response([
                 'default_branch' => 'main',

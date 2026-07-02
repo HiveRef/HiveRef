@@ -18,6 +18,11 @@ class ProjectTask extends Model
         'project_id', 'prompt', 'model', 'has_custom_api_key', 'status',
     ];
 
+    protected $attributes = [
+        'model' => 'github/deepseek-v4',
+        'has_custom_api_key' => false,
+    ];
+
     protected function casts(): array
     {
         return [

@@ -68,7 +68,7 @@ If the user provides a custom API key:
 1. It is NEVER stored in the HiveRef database
 2. `StoreApiSecrets` sends it to GitHub Repository Secrets as `CUSTOM_LLM_API_KEY`
 3. `SetupCodespaceDevcontainer` includes `remoteEnv.CUSTOM_LLM_API_KEY` in devcontainer.json
-4. Inside the Codespace, `openocode.json` references it as `$CUSTOM_LLM_API_KEY`
+4. Inside the Codespace, `opencode.json` references it as `$CUSTOM_LLM_API_KEY`
 
 ## Testing
 

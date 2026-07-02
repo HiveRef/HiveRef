@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('project_tasks', function (Blueprint $table) {
-            $table->string('model')->nullable()->default('github/deepseek-v4')->after('prompt');
-            $table->boolean('has_custom_api_key')->nullable()->default(false)->after('model');
+            $table->string('model')->default('github/deepseek-v4')->after('prompt');
+            $table->boolean('has_custom_api_key')->default(false)->after('model');
         });
 
         Schema::table('project_sub_tasks', function (Blueprint $table) {

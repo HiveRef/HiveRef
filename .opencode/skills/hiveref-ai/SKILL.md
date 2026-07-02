@@ -44,7 +44,7 @@ The model selector in `PromptHub.tsx` is grouped into:
 The `CallOpenCode` action (`app/Actions/Swarm/CallOpenCode.php`) wraps the opencode CLI:
 
 ```php
-$process = Process::timeout(60)->run("opencode \"{$prompt}\"");
+$process = Process::timeout(60)->run(['opencode', $prompt]);
 ```
 
 It:

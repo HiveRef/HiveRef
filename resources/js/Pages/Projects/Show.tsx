@@ -1,7 +1,7 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle, Clock, CheckCircle, X, AlertCircle, Loader2 } from 'lucide-react';
 import { useEcho } from '@laravel/echo-react';
-import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -36,9 +36,17 @@ interface Project {
     tasks: Task[];
 }
 
+interface Activity {
+    id: number;
+    action: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+}
+
 interface PageProps {
     auth: { user: { id: number; username: string; avatar: string | null } | null };
     project: Project;
+    activities: Activity[];
 }
 
 const statusConfig: Record<string, { color: string; bg: string; border: string; dot?: boolean; pulse?: boolean }> = {
@@ -180,7 +188,7 @@ function AgentCard({ subTask, onApprove, onReject }: { subTask: SubTask; onAppro
 }
 
 export default function ProjectShow() {
-    const { auth, project } = usePage<PageProps>().props;
+    const { auth, project, activities } = usePage<PageProps>().props;
     const [showPromptForm, setShowPromptForm] = useState(false);
     const [showRepoForm, setShowRepoForm] = useState(false);
     const [showSecretForm, setShowSecretForm] = useState(false);
@@ -428,6 +436,71 @@ export default function ProjectShow() {
                     </div>
                 )}
             </div>
+
+            {activities.length > 0 && (
+                <div className="mt-8 rounded-sm overflow-hidden" style={{ border: "1px solid rgba(250,204,21,0.15)", background: "#0a0a0c" }}>
+                    <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(250,204,21,0.08)" }}>
+                        <Activity size={14} style={{ color: "#FACC15" }} />
+                        <h3 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: "0.8rem", color: "#f0f0f0" }}>Activity Log</h3>
+                    </div>
+                    <div className="divide-y" style={{ borderColor: "rgba(250,204,21,0.06)" }}>
+                        {activities.map((a) => (
+                            <div key={a.id} className="px-4 py-2.5 flex items-start gap-3">
+                                <ActivityIcon action={a.action} />
+                                <div className="min-w-0 flex-1">
+                                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "#d0d0d8" }}>
+                                        {formatAction(a.action)}
+                                    </p>
+                                    {a.metadata && Object.keys(a.metadata).length > 0 && (
+                                        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#555560", marginTop: 2 }}>
+                                            {JSON.stringify(a.metadata)}
+                                        </p>
+                                    )}
+                                    <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#444450", marginTop: 1 }}>
+                                        {formatTime(a.created_at)}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
+}
+
+function ActivityIcon({ action }: { action: string }) {
+    const icon = action.includes('created') ? <CheckCircle size={14} /> :
+        action.includes('cancelled') || action.includes('rejected') || action.includes('deleted') ? <X size={14} /> :
+        action.includes('approved') || action.includes('merged') ? <GitMerge size={14} /> :
+        action.includes('deployed') ? <Zap size={14} /> :
+        <Clock size={14} />;
+
+    const color = action.includes('created') || action.includes('approved') || action.includes('merged') ? '#22c55e' :
+        action.includes('cancelled') || action.includes('rejected') || action.includes('deleted') ? '#ef4444' :
+        action.includes('deployed') ? '#F97316' :
+        '#FACC15';
+
+    return (
+        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 mt-0.5"
+            style={{ background: `${color}12`, border: `1px solid ${color}30` }}>
+            {icon}
+        </div>
+    );
+}
+
+function formatAction(action: string): string {
+    return action
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatTime(dateStr: string): string {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return d.toLocaleDateString();
 }

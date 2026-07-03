@@ -2,6 +2,7 @@
 
 namespace App\Actions\Github;
 
+use App\Actions\Activity\LogActivity;
 use App\Enums\SubTaskStatus;
 use App\Events\SubTaskStatusChanged;
 use App\Models\ProjectSubTask;
@@ -36,6 +37,12 @@ class MergePullRequest
         ]);
 
         SubTaskStatusChanged::dispatch($subTask);
+        app(LogActivity::class)->execute(
+            $subTask->task->project_id,
+            'pull_request.merged',
+            $user->id,
+            ['sub_task_id' => $subTask->id, 'pr_url' => $subTask->pr_url],
+        );
 
         return true;
     }

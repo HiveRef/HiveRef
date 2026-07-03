@@ -2,6 +2,7 @@
 
 namespace App\Actions\Swarm;
 
+use App\Actions\Activity\LogActivity;
 use App\Actions\Github\StopCodespace;
 use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
@@ -38,6 +39,12 @@ class CancelSwarm
         $task->update(['status' => TaskStatus::Failed]);
 
         TaskStatusChanged::dispatch($task);
+        app(LogActivity::class)->execute(
+            $task->project_id,
+            'swarm.cancelled',
+            $user->id,
+            ['task_id' => $task->id, 'reason' => 'User cancelled'],
+        );
 
         return true;
     }

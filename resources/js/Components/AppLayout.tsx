@@ -1,6 +1,8 @@
 import { usePage } from "@inertiajs/react";
 import { Sidebar } from "@/Components/Sidebar";
 import { Header } from "@/Components/Header";
+import { Toast } from "@/Components/ui/toast";
+import { useState } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -9,7 +11,9 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, breadcrumbs, rightContent }: AppLayoutProps) {
-  const { auth } = usePage<{ auth: { user: { id: number; username: string; avatar: string | null; has_github_token?: boolean } | null } }>().props;
+  const { auth, flash } = usePage<{ auth: { user: { id: number; username: string; avatar: string | null; has_github_token?: boolean } | null }; flash?: { success?: string; error?: string } }>().props;
+  const [flashMessage, setFlashMessage] = useState(flash?.success || flash?.error || null);
+  const [flashType, setFlashType] = useState<'success' | 'error'>(flash?.success ? 'success' : 'error');
 
   if (!auth?.user) {
     return <>{children}</>;
@@ -26,6 +30,9 @@ export default function AppLayout({ children, breadcrumbs, rightContent }: AppLa
           </div>
         </main>
       </div>
+      {flashMessage && (
+        <Toast message={flashMessage} type={flashType} onClose={() => setFlashMessage(null)} />
+      )}
     </div>
   );
 }

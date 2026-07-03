@@ -5,9 +5,12 @@ declare(strict_types=1);
 use App\Actions\Swarm\CancelSwarm;
 use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
+use App\Events\SubTaskStatusChanged;
+use App\Events\TaskStatusChanged;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -58,6 +61,24 @@ test('it handles sub-tasks without codespace', function () {
     expect($this->task->refresh()->status)->toBe(TaskStatus::Failed);
     expect($this->task->subTasks()->whereNull('codespace_id')->first()->status)
         ->toBe(SubTaskStatus::Failed);
+});
+
+test('it dispatches broadcasting events when cancelling swarm', function () {
+    Event::fake();
+
+    Http::fake([
+        'https://api.github.com/user/codespaces/cs_test_123/stop' => Http::response([], 202),
+    ]);
+
+    $this->action->execute($this->task, $this->user);
+
+    Event::assertDispatched(TaskStatusChanged::class, function ($event) {
+        return $event->task->id === $this->task->id;
+    });
+
+    Event::assertDispatched(SubTaskStatusChanged::class, function ($event) {
+        return $event->subTask->id === $this->subTask->id;
+    });
 });
 
 test('it returns false when user has no github token', function () {

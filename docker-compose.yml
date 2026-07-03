@@ -90,6 +90,36 @@ services:
     networks:
       - hiveref
 
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hiveref-reverb
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      - RUN_BOOTSTRAP=false
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=hiveref
+      - DB_USERNAME=hiveref
+      - DB_PASSWORD=hiveref
+      - REDIS_HOST=redis
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+    command: ["php", "artisan", "reverb:start"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - app
+      - redis
+    networks:
+      - hiveref
+
   horizon:
     build:
       context: .

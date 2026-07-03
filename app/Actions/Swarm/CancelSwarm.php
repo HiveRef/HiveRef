@@ -5,6 +5,8 @@ namespace App\Actions\Swarm;
 use App\Actions\Github\StopCodespace;
 use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
+use App\Events\SubTaskStatusChanged;
+use App\Events\TaskStatusChanged;
 use App\Models\ProjectTask;
 use App\Models\User;
 
@@ -29,9 +31,13 @@ class CancelSwarm
                 'status' => SubTaskStatus::Failed,
                 'error_message' => 'Swarm cancelled by user',
             ]);
+
+            SubTaskStatusChanged::dispatch($subTask);
         }
 
         $task->update(['status' => TaskStatus::Failed]);
+
+        TaskStatusChanged::dispatch($task);
 
         return true;
     }

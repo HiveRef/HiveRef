@@ -238,3 +238,41 @@ test('user can deploy swarm with custom api key stored as github secret', functi
 
     Queue::assertPushed(ProcessMacroPrompt::class, 1);
 });
+
+test('deploy swarm rejects prompt shorter than 10 characters', function () {
+    $response = $this->post('/deploy-swarm', [
+        'prompt' => 'Hi',
+        'model' => 'github/deepseek-v4',
+        'github_repo_id' => '12345',
+        'github_repo_name' => 'test-repo',
+        'github_repo_full_name' => 'user/test-repo',
+    ]);
+
+    $response->assertSessionHasErrors('prompt');
+});
+
+test('deploy swarm rejects invalid model name', function () {
+    $response = $this->post('/deploy-swarm', [
+        'prompt' => 'Build a web app with authentication',
+        'model' => 'gpt-4',
+        'github_repo_id' => '12345',
+        'github_repo_name' => 'test-repo',
+        'github_repo_full_name' => 'user/test-repo',
+    ]);
+
+    $response->assertSessionHasErrors('model');
+});
+
+test('deploy swarm respects throttle limit', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $response = $this->post('/deploy-swarm', [
+            'prompt' => 'Build a web app with authentication',
+            'model' => 'github/deepseek-v4',
+            'github_repo_id' => '12345',
+            'github_repo_name' => 'test-repo',
+            'github_repo_full_name' => 'user/test-repo',
+        ]);
+    }
+
+    $response->assertTooManyRequests();
+});

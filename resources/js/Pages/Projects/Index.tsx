@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { Plus, FolderGit2, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X } from 'lucide-react';
+import { Plus, FolderGit2, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Input } from '@/Components/ui/input';
 import AppLayout from '@/Components/AppLayout';
@@ -28,9 +28,22 @@ interface GithubRepo {
     updated_at: string;
 }
 
+interface PaginatedData<T> {
+    data: T[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from: number | null;
+        to: number | null;
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+    };
+}
+
 interface PageProps {
     auth: { user: { id: number; username: string; avatar: string | null; has_github_token?: boolean } | null };
-    projects: Project[];
+    projects: PaginatedData<Project>;
     githubRepos: GithubRepo[];
 }
 
@@ -104,7 +117,7 @@ export default function ProjectIndex() {
     const [newRepoPrivate, setNewRepoPrivate] = useState(true);
     const [creatingRepo, setCreatingRepo] = useState(false);
 
-    const linkedRepos = new Set(projects.filter(p => p.github_repo_full_name).map(p => p.github_repo_full_name));
+    const linkedRepos = new Set(projects.data.filter(p => p.github_repo_full_name).map(p => p.github_repo_full_name));
 
     function handleCreateRepo(e: React.FormEvent) {
         e.preventDefault();
@@ -141,10 +154,10 @@ export default function ProjectIndex() {
                 <div className="flex items-center gap-2">
                     <div className="w-1 h-4 rounded-full" style={{ background: "#22c55e" }} />
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#555560", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                        HiveRef Projects ({projects.length})
+                        HiveRef Projects ({projects.meta.total})
                     </span>
                 </div>
-                {projects.map(project => {
+                {projects.data.map(project => {
                     const ss = statusStyle(project.status);
                     return (
                         <Link
@@ -366,7 +379,7 @@ export default function ProjectIndex() {
                                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#22c55e" }}>
                                                 Imported to HiveRef
                                             </span>
-                                            <Link href={`/projects/${projects.find(p => p.github_repo_full_name === repo.full_name)?.id}`}
+                                            <Link href={`/projects/${projects.data.find(p => p.github_repo_full_name === repo.full_name)?.id}`}
                                                 className="ml-auto flex items-center gap-1 hover:opacity-80"
                                                 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#FACC15" }}>
                                                 Open <ExternalLink size={9} />
@@ -377,6 +390,30 @@ export default function ProjectIndex() {
                             );
                         })}
                     </div>
+                </div>
+            )}
+
+            {projects.meta.last_page > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                    {projects.meta.links.map((link, i) => {
+                        if (!link.url) {
+                            return (
+                                <span key={i} className="px-2 py-1 rounded text-xs" style={{ color: '#333340', fontFamily: "'JetBrains Mono', monospace" }}
+                                    dangerouslySetInnerHTML={{ __html: link.label }} />
+                            );
+                        }
+                        return (
+                            <Link key={i} href={link.url}
+                                className="px-2 py-1 rounded text-xs transition-all hover:opacity-80"
+                                style={{
+                                    background: link.active ? 'rgba(250,204,21,0.15)' : 'transparent',
+                                    border: `1px solid ${link.active ? 'rgba(250,204,21,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                                    color: link.active ? '#FACC15' : '#888890',
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                }}
+                                dangerouslySetInnerHTML={{ __html: link.label }} />
+                        );
+                    })}
                 </div>
             )}
 

@@ -4,6 +4,7 @@ use App\Enums\SubTaskStatus;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SettingsController;
 use App\Models\Project;
 use App\Models\ProjectSubTask;
 use Illuminate\Support\Facades\Http;
@@ -90,6 +91,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/deploy-swarm', [ProjectController::class, 'deploySwarm'])
         ->name('deploy-swarm')
         ->middleware('throttle:5,1');
+
+    Route::get('/settings', [SettingsController::class, 'show'])->name('settings');
+    Route::post('/settings/disconnect-github', [SettingsController::class, 'disconnectGithub']);
 
     Route::post('/sub-tasks/{subTask}/approve', [ProjectController::class, 'approveSubTask'])->name('sub-tasks.approve');
     Route::post('/sub-tasks/{subTask}/reject', [ProjectController::class, 'rejectSubTask'])->name('sub-tasks.reject');

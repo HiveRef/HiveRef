@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { LayoutDashboard, FolderGit2, GitBranch, ScrollText, FileCode, ShieldCheck, ChevronRight, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderGit2, GitBranch, ScrollText, FileCode, ShieldCheck, Settings, ChevronRight, LogOut } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
@@ -92,6 +92,9 @@ export function Sidebar() {
               </span>
             </div>
           </div>
+          <Link href="/settings" className="shrink-0 hover:opacity-80 mr-1">
+            <Settings size={14} style={{ color: "#888890" }} />
+          </Link>
           <Link href="/logout" method="post" as="button" className="shrink-0 hover:opacity-80">
             <LogOut size={14} style={{ color: "#555560" }} />
           </Link>

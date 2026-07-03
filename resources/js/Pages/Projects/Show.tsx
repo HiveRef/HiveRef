@@ -1,6 +1,6 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, ChevronDown, Activity } from 'lucide-react';
+import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -196,6 +196,12 @@ export default function ProjectShow() {
         router.post(`/sub-tasks/${id}/reject`);
     }
 
+    function cancelSwarm(taskId: number) {
+        if (confirm('Are you sure you want to cancel this swarm? All running codespaces will be stopped.')) {
+            router.post(`/tasks/${taskId}/cancel`);
+        }
+    }
+
     const projectStatus = statusConfig[project.status] || statusConfig.pending;
 
     return (
@@ -372,6 +378,14 @@ export default function ProjectShow() {
                                                 {task.status.replace('_', ' ')}
                                             </span>
                                         </div>
+                                        {(task.status === 'analyzing_prompt' || task.status === 'swarm_active' || task.status === 'awaiting_review') && (
+                                            <button onClick={() => cancelSwarm(task.id)}
+                                                className="flex items-center gap-1 px-2 py-1 rounded transition-all hover:opacity-80"
+                                                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}>
+                                                <XCircle size={12} />
+                                                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem" }}>Cancel</span>
+                                            </button>
+                                        )}
                                     </div>
                                     {task.sub_tasks.length > 0 && (
                                         <div className="p-3 space-y-2">

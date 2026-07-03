@@ -49,7 +49,7 @@ test('it handles sub-tasks without codespace', function () {
     ]);
 
     Http::fake([
-        'api.github.com/user/codespaces/cs_test_123/stop' => Http::response([], 202),
+        'https://api.github.com/user/codespaces/cs_test_123/stop' => Http::response([], 202),
     ]);
 
     $result = $this->action->execute($this->task, $this->user);

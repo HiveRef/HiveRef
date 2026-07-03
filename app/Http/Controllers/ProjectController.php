@@ -199,8 +199,8 @@ class ProjectController extends Controller
     public function deploySwarm(Request $request)
     {
         $validated = $request->validate([
-            'prompt' => ['required', 'string', 'max:5000'],
-            'model' => ['nullable', 'string', 'max:255'],
+            'prompt' => ['required', 'string', 'min:10', 'max:5000'],
+            'model' => ['nullable', 'string', 'in:github/deepseek-v4,opencode/big-pickle'],
             'api_key' => ['nullable', 'string', 'max:5000'],
             'github_repo_id' => ['required', 'string'],
             'github_repo_name' => ['required', 'string'],

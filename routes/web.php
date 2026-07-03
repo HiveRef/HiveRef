@@ -87,7 +87,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/review', [ProjectController::class, 'review'])->name('review.index');
 
-    Route::post('/deploy-swarm', [ProjectController::class, 'deploySwarm'])->name('deploy-swarm');
+    Route::post('/deploy-swarm', [ProjectController::class, 'deploySwarm'])
+        ->name('deploy-swarm')
+        ->middleware('throttle:5,1');
 
     Route::post('/sub-tasks/{subTask}/approve', [ProjectController::class, 'approveSubTask'])->name('sub-tasks.approve');
     Route::post('/sub-tasks/{subTask}/reject', [ProjectController::class, 'rejectSubTask'])->name('sub-tasks.reject');

@@ -5,6 +5,7 @@ use App\Enums\TaskStatus;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
 use App\Models\ProjectSubTask;
+use App\Models\ProjectTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -275,4 +276,29 @@ test('deploy swarm respects throttle limit', function () {
     }
 
     $response->assertTooManyRequests();
+});
+
+test('user cannot cancel another users task', function () {
+    $otherUser = User::factory()->create();
+    $task = ProjectTask::factory()->create();
+
+    $this->post("/tasks/{$task->id}/cancel")
+        ->assertForbidden();
+});
+
+test('user can cancel their own swarm task', function () {
+    $project = Project::factory()->create(['user_id' => $this->user->id]);
+    $task = ProjectTask::factory()->create([
+        'project_id' => $project->id,
+        'status' => TaskStatus::SwarmActive,
+    ]);
+
+    Http::fake([
+        '*' => Http::response([], 202),
+    ]);
+
+    $response = $this->post("/tasks/{$task->id}/cancel");
+
+    $response->assertRedirect();
+    expect($task->refresh()->status)->toBe(TaskStatus::Failed);
 });

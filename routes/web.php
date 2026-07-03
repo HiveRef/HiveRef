@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/sub-tasks/{subTask}/approve', [ProjectController::class, 'approveSubTask'])->name('sub-tasks.approve');
     Route::post('/sub-tasks/{subTask}/reject', [ProjectController::class, 'rejectSubTask'])->name('sub-tasks.reject');
+    Route::post('/tasks/{task}/cancel', [ProjectController::class, 'cancelSwarm'])->name('tasks.cancel');
 
     Route::get('/github/repositories', [ProjectController::class, 'repositories']);
     Route::post('/github/repos/create', [ProjectController::class, 'createRepo']);

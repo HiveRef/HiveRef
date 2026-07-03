@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Github\CreateRepo;
 use App\Actions\Github\MergePullRequest;
 use App\Actions\Github\StoreApiSecrets;
+use App\Actions\Swarm\CancelSwarm;
 use App\Enums\SubTaskStatus;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
@@ -251,6 +252,21 @@ class ProjectController extends Controller
         ProcessMacroPrompt::dispatch($task, auth()->user());
 
         return redirect("/projects/{$project->id}");
+    }
+
+    public function cancelSwarm(ProjectTask $task)
+    {
+        if ($task->project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $cancelled = app(CancelSwarm::class)->execute($task, auth()->user());
+
+        if (! $cancelled) {
+            return back()->withErrors(['message' => 'Failed to cancel swarm']);
+        }
+
+        return redirect("/projects/{$task->project_id}");
     }
 
     public function approveSubTask(ProjectSubTask $subTask)

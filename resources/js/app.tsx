@@ -1,6 +1,11 @@
 import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot, type Root } from 'react-dom/client';
+import { configureEcho } from '@laravel/echo-react';
+
+configureEcho({
+    broadcaster: 'reverb',
+});
 
 createInertiaApp({
     resolve: (name: string) => {

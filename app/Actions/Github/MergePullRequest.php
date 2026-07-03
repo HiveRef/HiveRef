@@ -3,6 +3,7 @@
 namespace App\Actions\Github;
 
 use App\Enums\SubTaskStatus;
+use App\Events\SubTaskStatusChanged;
 use App\Models\ProjectSubTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -33,6 +34,8 @@ class MergePullRequest
             'status' => SubTaskStatus::Merged,
             'codespace_id' => null,
         ]);
+
+        SubTaskStatusChanged::dispatch($subTask);
 
         return true;
     }

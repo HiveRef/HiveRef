@@ -7,6 +7,7 @@ use App\Actions\Github\MergePullRequest;
 use App\Actions\Github\StoreApiSecrets;
 use App\Actions\Swarm\CancelSwarm;
 use App\Enums\SubTaskStatus;
+use App\Events\SubTaskStatusChanged;
 use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
 use App\Models\ProjectSubTask;
@@ -110,7 +111,7 @@ class ProjectController extends Controller
 
         ProcessMacroPrompt::dispatch($task, auth()->user());
 
-        return redirect("/projects/{$project->id}");
+        return redirect("/projects/{$project->id}")->with('success', 'Macro prompt sent for analysis');
     }
 
     public function linkRepo(Request $request, Project $project)
@@ -127,7 +128,7 @@ class ProjectController extends Controller
 
         $project->update($validated);
 
-        return redirect("/projects/{$project->id}");
+        return redirect("/projects/{$project->id}")->with('success', 'Repository linked successfully');
     }
 
     public function repositories()
@@ -178,7 +179,7 @@ class ProjectController extends Controller
             return back()->withErrors(['message' => 'Failed to store secret on GitHub']);
         }
 
-        return redirect("/projects/{$project->id}");
+        return redirect("/projects/{$project->id}")->with('success', 'API key stored as GitHub secret');
     }
 
     public function review()
@@ -251,7 +252,7 @@ class ProjectController extends Controller
 
         ProcessMacroPrompt::dispatch($task, auth()->user());
 
-        return redirect("/projects/{$project->id}");
+        return redirect("/projects/{$project->id}")->with('success', 'Swarm deployed successfully');
     }
 
     public function cancelSwarm(ProjectTask $task)
@@ -266,7 +267,7 @@ class ProjectController extends Controller
             return back()->withErrors(['message' => 'Failed to cancel swarm']);
         }
 
-        return redirect("/projects/{$task->project_id}");
+        return redirect("/projects/{$task->project_id}")->with('success', 'Swarm cancelled successfully');
     }
 
     public function approveSubTask(ProjectSubTask $subTask)
@@ -281,7 +282,7 @@ class ProjectController extends Controller
             return back()->withErrors(['message' => 'Failed to merge pull request']);
         }
 
-        return back();
+        return back()->with('success', 'Pull request merged successfully');
     }
 
     public function rejectSubTask(ProjectSubTask $subTask)
@@ -295,7 +296,9 @@ class ProjectController extends Controller
             'error_message' => 'Rejected by user',
         ]);
 
-        return back();
+        SubTaskStatusChanged::dispatch($subTask);
+
+        return back()->with('success', 'Sub-task rejected');
     }
 
     public function createRepo(Request $request)

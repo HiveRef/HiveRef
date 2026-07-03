@@ -5,6 +5,8 @@ namespace App\Actions\Github;
 use App\Actions\Swarm\AnalyzeMacroPrompt;
 use App\Enums\SubTaskStatus;
 use App\Enums\TaskStatus;
+use App\Events\SubTaskStatusChanged;
+use App\Events\TaskStatusChanged;
 use App\Jobs\ProvisionSubTaskCodespace;
 use App\Models\ProjectTask;
 use Illuminate\Support\Str;
@@ -18,8 +20,14 @@ class OrchestrateProjectSwarm
         $task->refresh();
 
         if ($task->status !== TaskStatus::SwarmActive) {
+            if ($task->status === TaskStatus::Failed) {
+                TaskStatusChanged::dispatch($task);
+            }
+
             return;
         }
+
+        TaskStatusChanged::dispatch($task);
 
         $repoFullName = $task->project->github_repo_full_name;
         $user = $task->project->user;
@@ -51,6 +59,7 @@ class OrchestrateProjectSwarm
                         'status' => SubTaskStatus::Failed,
                         'error_message' => 'Failed to create branch in repository',
                     ]);
+                    SubTaskStatusChanged::dispatch($subTask);
                 }
 
                 continue;
@@ -63,6 +72,7 @@ class OrchestrateProjectSwarm
                     'status' => SubTaskStatus::Failed,
                     'error_message' => 'Failed to commit devcontainer/opencode config to branch',
                 ]);
+                SubTaskStatusChanged::dispatch($subTask);
 
                 continue;
             }

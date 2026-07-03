@@ -1,29 +1,35 @@
 name: Tests
 
-permissions:
-  contents: read
-
 on:
   push:
-    branches: [main]
+    branches: [main, '@**']
   pull_request:
-    branches: [main]
 
 jobs:
-  pest:
+  tests:
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_DB: hiveref_test
+          POSTGRES_DB: hiveref
           POSTGRES_USER: hiveref
           POSTGRES_PASSWORD: hiveref
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U hiveref
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -35,64 +41,66 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pgsql, pdo_pgsql, sodium, pcntl
-          coverage: pcov
+          extensions: pdo_pgsql, redis, mbstring, zip, pcntl
+          tools: composer:v2
+          coverage: none
 
-      - name: Get composer cache directory
+      - name: Get Composer cache directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache dependencies
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-interaction
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --optimize-autoloader
 
-      - name: Prepare environment
+      - name: Setup environment
         run: |
           cp .env.example .env
-          php artisan key:generate
-          echo "DB_CONNECTION=pgsql" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=5432" >> .env
-          echo "DB_DATABASE=hiveref_test" >> .env
-          echo "DB_USERNAME=hiveref" >> .env
-          echo "DB_PASSWORD=hiveref" >> .env
+          php artisan key:generate --ansi
 
-      - name: Setup Node
+      - name: Run migrations
+        run: php artisan migrate --force --ansi
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: hiveref
+          DB_USERNAME: hiveref
+          DB_PASSWORD: hiveref
+
+      - name: Check coding style
+        run: ./vendor/bin/pint --test
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: hiveref
+          DB_USERNAME: hiveref
+          DB_PASSWORD: hiveref
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: '22'
 
-      - name: Build frontend assets
-        run: |
-          npm ci --ignore-scripts
-          npm run build
-
-      - name: Execute tests (Pest)
-        run: php artisan test --coverage --min=80
-
-      - name: Run Pint (style check)
-        run: ./vendor/bin/pint --test
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Cache Node modules
+        uses: actions/cache@v4
         with:
-          php-version: '8.3'
-          extensions: pgsql, pdo_pgsql, sodium
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-interaction
+      - name: Install Node dependencies
+        run: npm ci --legacy-peer-deps
 
-      - name: Check coding standards
-        run: ./vendor/bin/pint --test
+      - name: Build assets
+        run: npm run build

@@ -12,12 +12,15 @@ use App\Jobs\ProcessMacroPrompt;
 use App\Models\Project;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
         $projects = Project::where('user_id', auth()->id())
@@ -325,5 +328,14 @@ class ProjectController extends Controller
         }
 
         return response()->json($repo, 201);
+    }
+
+    public function destroy(Project $project)
+    {
+        $this->authorize('delete', $project);
+
+        $project->delete();
+
+        return redirect()->route('projects.index')->with('success', 'Project deleted');
     }
 }

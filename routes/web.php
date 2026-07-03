@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
         Route::post('/', [ProjectController::class, 'store'])->name('projects.store');
         Route::get('/{project}', [ProjectController::class, 'show'])->name('projects.show');
+        Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
         Route::post('/{project}/tasks', [ProjectController::class, 'storeTask']);
         Route::post('/{project}/link-repo', [ProjectController::class, 'linkRepo']);
         Route::post('/{project}/secrets', [ProjectController::class, 'storeSecret']);

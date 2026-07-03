@@ -232,6 +232,18 @@ export default function ProjectShow() {
                 >
                     {project.status}
                 </Badge>
+                <button
+                    onClick={() => {
+                        if (confirm('Delete this project? This action cannot be undone.')) {
+                            router.delete(`/projects/${project.id}`);
+                        }
+                    }}
+                    className="ml-auto flex items-center gap-1 px-2 py-1 rounded transition-all hover:opacity-80"
+                    style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.65rem', background: 'rgba(239,68,68,0.06)' }}
+                >
+                    <Trash2 size={12} />
+                    Delete
+                </button>
             </div>
 
             {project.description && (

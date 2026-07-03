@@ -1,7 +1,6 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle, Clock, CheckCircle, X, AlertCircle, Loader2 } from 'lucide-react';
-import { useEcho } from '@laravel/echo-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -70,6 +69,8 @@ const typeColors: Record<string, string> = {
 };
 
 function AgentCard({ subTask, onApprove, onReject }: { subTask: SubTask; onApprove?: (id: number) => void; onReject?: (id: number) => void }) {
+    const [approving, setApproving] = useState(false);
+    const [rejecting, setRejecting] = useState(false);
     const status = statusConfig[subTask.status] || statusConfig.pending;
     const isMerged = subTask.status === 'merged';
     const isAwaitingReview = subTask.status === 'awaiting_review';
@@ -169,16 +170,18 @@ function AgentCard({ subTask, onApprove, onReject }: { subTask: SubTask; onAppro
                             <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500 }}>Open Web IDE</span>
                         </a>
                     )}
-                    <button onClick={() => onApprove?.(subTask.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded transition-all hover:opacity-90"
+                    <button onClick={() => { setApproving(true); onApprove?.(subTask.id); }}
+                        disabled={approving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded transition-all hover:opacity-90 disabled:opacity-50"
                         style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)", color: "#22c55e" }}>
-                        <GitMerge size={12} />
+                        {approving ? <Loader2 size={12} className="animate-spin" /> : <GitMerge size={12} />}
                         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500 }}>Approve & Merge</span>
                     </button>
-                    <button onClick={() => onReject?.(subTask.id)}
-                        className="flex items-center gap-1.5 px-2 py-1.5 rounded transition-all ml-auto hover:opacity-80"
+                    <button onClick={() => { setRejecting(true); onReject?.(subTask.id); }}
+                        disabled={rejecting}
+                        className="flex items-center gap-1.5 px-2 py-1.5 rounded transition-all ml-auto hover:opacity-80 disabled:opacity-50"
                         style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", color: "#555560" }}>
-                        <Trash2 size={12} />
+                        {rejecting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem" }}>Reject</span>
                     </button>
                 </div>
@@ -193,6 +196,9 @@ export default function ProjectShow() {
     const [showRepoForm, setShowRepoForm] = useState(false);
     const [showSecretForm, setShowSecretForm] = useState(false);
     const [tasks, setTasks] = useState(project.tasks);
+    const [deploying, setDeploying] = useState(false);
+    const [linking, setLinking] = useState(false);
+    const [savingSecret, setSavingSecret] = useState(false);
 
     useEcho(`project.${project.id}`, 'SubTaskStatusChanged', (e: { sub_task_id: number; task_id: number; status: string }) => {
         setTasks(prev => prev.map(task =>
@@ -335,7 +341,7 @@ export default function ProjectShow() {
                             rows={4}
                         />
                         {prompt.errors.prompt && <p className="text-red-400 text-xs">{prompt.errors.prompt}</p>}
-                        <Button type="submit" disabled={prompt.processing}>
+                        <Button type="submit" disabled={prompt.processing} loading={prompt.processing}>
                             <Zap size={14} />
                             Send for Analysis
                         </Button>
@@ -367,7 +373,7 @@ export default function ProjectShow() {
                             )}
                         </div>
                         {secret.errors.secret_value && <p className="text-red-400 text-xs">{secret.errors.secret_value}</p>}
-                        <Button type="submit" disabled={secret.processing}>
+                        <Button type="submit" disabled={secret.processing} loading={secret.processing}>
                             <Key size={14} />
                             Store in GitHub Secrets
                         </Button>

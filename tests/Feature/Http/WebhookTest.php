@@ -15,6 +15,16 @@ function webhookSignature(array $payload): string
     return 'sha256='.hash_hmac('sha256', json_encode($payload), 'test-secret');
 }
 
+test('it returns 401 when webhook secret is not configured', function () {
+    config(['services.github.webhook_secret' => null]);
+
+    $response = $this->postJson('/api/webhooks/github', [], [
+        'X-GitHub-Event' => 'codespace',
+    ]);
+
+    $response->assertStatus(401);
+});
+
 test('it rejects requests without valid signature', function () {
     $response = $this->postJson('/api/webhooks/github', [], [
         'X-GitHub-Event' => 'codespace',

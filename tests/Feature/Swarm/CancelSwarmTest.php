@@ -25,7 +25,7 @@ beforeEach(function () {
 
 test('it cancels a swarm task and stops all codespaces', function () {
     Http::fake([
-        'api.github.com/user/codespaces/cs_test_123/stop' => Http::response([], 202),
+        'https://api.github.com/user/codespaces/cs_test_123/stop' => Http::response([], 202),
     ]);
 
     $result = $this->action->execute($this->task, $this->user);

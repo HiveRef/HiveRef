@@ -23,7 +23,7 @@ class ProjectController extends Controller
         $projects = Project::where('user_id', auth()->id())
             ->with('tasks.subTasks')
             ->latest()
-            ->get();
+            ->paginate(10);
 
         $githubRepos = [];
         $token = auth()->user()->github_token;

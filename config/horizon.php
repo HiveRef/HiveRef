@@ -87,6 +87,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Emails
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated list of email addresses allowed to view the Horizon
+    | dashboard in non-local environments. In local environment the gate
+    | is bypassed automatically by Horizon.
+    |
+    */
+
+    'admin_emails' => env('HORIZON_ADMIN_EMAILS', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Wait Time Thresholds
     |--------------------------------------------------------------------------
     |

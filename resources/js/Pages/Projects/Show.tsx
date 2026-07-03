@@ -1,6 +1,6 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, ChevronDown, Activity, XCircle } from 'lucide-react';
+import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';

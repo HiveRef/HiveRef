@@ -77,19 +77,6 @@ jobs:
           DB_USERNAME: hiveref
           DB_PASSWORD: hiveref
 
-      - name: Check coding style
-        run: ./vendor/bin/pint --test
-
-      - name: Run tests
-        run: php artisan test
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_DATABASE: hiveref
-          DB_USERNAME: hiveref
-          DB_PASSWORD: hiveref
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -107,3 +94,16 @@ jobs:
 
       - name: Build assets
         run: npm run build
+
+      - name: Check coding style
+        run: ./vendor/bin/pint --test
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: hiveref
+          DB_USERNAME: hiveref
+          DB_PASSWORD: hiveref

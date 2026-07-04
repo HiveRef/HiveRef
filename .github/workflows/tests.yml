@@ -60,8 +60,11 @@ jobs:
         run: composer install --no-interaction --optimize-autoloader
 
       - name: Setup environment
+        env:
+          BROADCAST_CONNECTION: log
         run: |
           cp .env.example .env
+          echo "BROADCAST_CONNECTION=log" >> .env
           php artisan key:generate --ansi
 
       - name: Run migrations

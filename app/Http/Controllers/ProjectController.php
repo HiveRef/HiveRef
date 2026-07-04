@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Activity\LogActivity;
 use App\Actions\Github\CreateRepo;
 use App\Actions\Github\MergePullRequest;
 use App\Actions\Github\StoreApiSecrets;
@@ -9,6 +10,7 @@ use App\Actions\Swarm\CancelSwarm;
 use App\Enums\SubTaskStatus;
 use App\Events\SubTaskStatusChanged;
 use App\Jobs\ProcessMacroPrompt;
+use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\ProjectSubTask;
 use App\Models\ProjectTask;
@@ -81,6 +83,13 @@ class ProjectController extends Controller
             'github_repo_full_name' => $validated['github_repo_full_name'],
         ]);
 
+        app(LogActivity::class)->execute(
+            $project->id,
+            'project.created',
+            auth()->id(),
+            ['name' => $project->name],
+        );
+
         return redirect("/projects/{$project->id}");
     }
 
@@ -92,8 +101,14 @@ class ProjectController extends Controller
 
         $project->load('tasks.subTasks');
 
+        $activities = ActivityLog::where('project_id', $project->id)
+            ->latest()
+            ->take(50)
+            ->get();
+
         return Inertia::render('Projects/Show', [
             'project' => $project,
+            'activities' => $activities,
         ]);
     }
 
@@ -254,6 +269,13 @@ class ProjectController extends Controller
         ]);
 
         ProcessMacroPrompt::dispatch($task, auth()->user());
+
+        app(LogActivity::class)->execute(
+            $project->id,
+            'swarm.deployed',
+            auth()->id(),
+            ['task_id' => $task->id, 'model' => $model],
+        );
 
         return redirect("/projects/{$project->id}")->with('success', 'Swarm deployed successfully');
     }

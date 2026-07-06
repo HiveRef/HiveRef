@@ -15,7 +15,7 @@ export default defineConfig({
     server: {
         host: true,
         port: 5174,
-        origin: 'http://localhost:5174',
+        origin: process.env.VITE_ORIGIN || 'http://localhost:5174',
         cors: true,
         watch: {
             ignored: ['**/storage/framework/views/**'],

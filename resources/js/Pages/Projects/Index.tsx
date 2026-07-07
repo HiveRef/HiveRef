@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { Plus, FolderGit2, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X, ChevronLeft, ChevronRight, ChevronDown, GitCommit, Cpu, Activity, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X, ChevronDown, Activity, Clock } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Input } from '@/Components/ui/input';
 import AppLayout from '@/Components/AppLayout';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { Plus, FolderGit2, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, FolderGit2, Star, GitFork, Globe, Lock, ExternalLink, Calendar, GitBranch, X, ChevronLeft, ChevronRight, ChevronDown, GitCommit, Cpu, Activity, Clock, CheckCircle } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Input } from '@/Components/ui/input';
 import AppLayout from '@/Components/AppLayout';
@@ -109,6 +109,17 @@ function linkRepoToProject(repo: GithubRepo) {
     });
 }
 
+const subTaskStatusConfig: Record<string, { color: string; bg: string; border: string }> = {
+    pending: { color: '#888890', bg: 'rgba(136,136,144,0.08)', border: 'rgba(136,136,144,0.2)' },
+    active: { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.25)' },
+    analyzing_prompt: { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.25)' },
+    swarm_active: { color: '#FACC15', bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.3)' },
+    awaiting_review: { color: '#F97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.4)' },
+    completed: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' },
+    merged: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' },
+    failed: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
+};
+
 export default function ProjectIndex() {
     const { auth, projects, githubRepos } = usePage<PageProps>().props;
     const [showNewRepoForm, setShowNewRepoForm] = useState(false);
@@ -116,6 +127,7 @@ export default function ProjectIndex() {
     const [newRepoDesc, setNewRepoDesc] = useState('');
     const [newRepoPrivate, setNewRepoPrivate] = useState(true);
     const [creatingRepo, setCreatingRepo] = useState(false);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
 
     const linkedRepos = new Set(projects.data.filter(p => p.github_repo_full_name).map(p => p.github_repo_full_name));
 
@@ -159,38 +171,138 @@ export default function ProjectIndex() {
                 </div>
                 {projects.data.map(project => {
                     const ss = statusStyle(project.status);
+                    const isExpanded = expandedId === project.id;
+                    const taskCount = project.tasks?.length ?? 0;
+                    const activeTasks = project.tasks?.filter(t => t.status !== 'completed' && t.status !== 'failed' && t.status !== 'merged').length ?? 0;
+
                     return (
-                        <Link
+                        <div
                             key={project.id}
-                            href={`/projects/${project.id}`}
-                            className="block rounded-sm overflow-hidden transition-all duration-200 hover:opacity-90"
+                            className="rounded-sm overflow-hidden transition-all duration-200"
                             style={{ background: "#0a0a0c", border: "1px solid rgba(250,204,21,0.15)", borderLeft: `3px solid ${ss.color}` }}
                         >
-                            <div className="px-4 pt-3 pb-3 flex items-start justify-between gap-2">
+                            <div
+                                onClick={() => setExpandedId(isExpanded ? null : project.id)}
+                                className="px-4 pt-3 pb-3 flex items-start justify-between gap-2 cursor-pointer hover:opacity-90"
+                            >
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="truncate" style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: "0.85rem", color: "#f0f0f0" }}>
-                                        {project.name}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <ChevronDown
+                                            size={14}
+                                            style={{
+                                                color: "#555560",
+                                                transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                                                transition: 'transform 0.15s',
+                                                flexShrink: 0,
+                                            }}
+                                        />
+                                        <h3 className="truncate" style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: "0.85rem", color: "#f0f0f0" }}>
+                                            {project.name}
+                                        </h3>
+                                    </div>
                                     {project.description && (
-                                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: "#666670", lineHeight: 1.5, marginTop: "4px" }}>
+                                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: "#666670", lineHeight: 1.5, marginTop: "4px", marginLeft: "26px" }}>
                                             {project.description}
                                         </p>
                                     )}
                                     {project.github_repo_full_name && (
-                                        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#FACC15", marginTop: "6px" }}>
+                                        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#FACC15", marginTop: "6px", marginLeft: "26px" }}>
                                             {project.github_repo_full_name}
                                         </p>
                                     )}
                                 </div>
-                                <Badge
-                                    variant="outline"
-                                    className="text-xs shrink-0"
-                                    style={{ background: ss.bg, borderColor: ss.border, color: ss.color, fontFamily: "'JetBrains Mono', monospace" }}
-                                >
-                                    {project.status}
-                                </Badge>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <Link href={`/projects/${project.id}`}
+                                        onClick={e => e.stopPropagation()}
+                                        className="px-2 py-1 rounded transition-all hover:opacity-80 text-xs"
+                                        style={{ background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", color: "#FACC15", fontFamily: "'JetBrains Mono', monospace", textDecoration: "none" }}
+                                    >
+                                        Open
+                                    </Link>
+                                    <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                        style={{ background: ss.bg, borderColor: ss.border, color: ss.color, fontFamily: "'JetBrains Mono', monospace" }}
+                                    >
+                                        {project.status}
+                                    </Badge>
+                                </div>
                             </div>
-                        </Link>
+
+                            {isExpanded && (
+                                <div style={{ borderTop: "1px solid rgba(250,204,21,0.06)" }}>
+                                    {taskCount === 0 ? (
+                                        <div className="px-4 py-4 text-center">
+                                            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "#333340" }}>
+                                                No tasks yet.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="px-4 py-3 space-y-2">
+                                            {project.tasks?.map(task => {
+                                                const subTasks = task.sub_tasks ?? [];
+                                                return (
+                                                    <div key={task.id} className="rounded-sm overflow-hidden" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(250,204,21,0.06)" }}>
+                                                        <div className="px-3 py-2 flex items-start justify-between gap-2" style={{ borderBottom: subTasks.length > 0 ? "1px solid rgba(250,204,21,0.04)" : "none" }}>
+                                                            <p className="flex-1" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "#888890", lineHeight: 1.4 }}>
+                                                                {task.prompt}
+                                                            </p>
+                                                            <span className="px-1.5 py-0.5 rounded shrink-0" style={{ background: "rgba(136,136,144,0.08)", color: "#888890", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", border: "1px solid rgba(136,136,144,0.2)" }}>
+                                                                {task.status.replace('_', ' ')}
+                                                            </span>
+                                                        </div>
+                                                        {subTasks.length > 0 && (
+                                                            <div className="divide-y" style={{ borderColor: "rgba(250,204,21,0.04)" }}>
+                                                                {subTasks.map(st => {
+                                                                    const sc = subTaskStatusConfig[st.status] || subTaskStatusConfig.pending;
+                                                                    return (
+                                                                        <div key={st.id} className="px-3 py-2 flex items-center gap-2">
+                                                                            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
+                                                                            <span className="flex-1 truncate" style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: "#d0d0d8" }}>
+                                                                                {st.title}
+                                                                            </span>
+                                                                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: sc.color }}>
+                                                                                {st.status.replace('_', ' ')}
+                                                                            </span>
+                                                                            {st.pr_url && (
+                                                                                <a href={st.pr_url} target="_blank" rel="noopener noreferrer" style={{ color: "#F97316" }}>
+                                                                                    <ExternalLink size={10} />
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <div className="px-4 py-2 flex items-center gap-3" style={{ borderTop: "1px solid rgba(250,204,21,0.06)", background: "rgba(0,0,0,0.15)" }}>
+                                        <div className="flex items-center gap-1.5">
+                                            <Activity size={10} style={{ color: "#444450" }} />
+                                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#444450" }}>
+                                                {taskCount} tasks
+                                            </span>
+                                        </div>
+                                        {activeTasks > 0 && (
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock size={10} style={{ color: "#F97316" }} />
+                                                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#F97316" }}>
+                                                    {activeTasks} active
+                                                </span>
+                                            </div>
+                                        )}
+                                        <Link href={`/projects/${project.id}`}
+                                            className="ml-auto flex items-center gap-1 hover:opacity-80"
+                                            style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#FACC15", textDecoration: "none" }}>
+                                            Full details <ExternalLink size={9} />
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>

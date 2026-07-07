@@ -1,5 +1,6 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { useEcho } from '@laravel/echo-react';
 import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle, Clock, CheckCircle, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';

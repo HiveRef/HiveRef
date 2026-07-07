@@ -6,20 +6,10 @@
         "ghcr.io/devcontainers/features/node:1": {}
     },
     "postCreateCommand": "docker compose up -d --remove-orphans",
-    "forwardPorts": [8000, 80, 5174],
+    "forwardPorts": [8000],
     "portsAttributes": {
         "8000": {
             "label": "Laravel (Nginx)",
-            "onAutoForward": "notify",
-            "visibility": "public"
-        },
-        "80": {
-            "label": "Laravel (Nginx - Port 80)",
-            "onAutoForward": "notify",
-            "visibility": "public"
-        },
-        "5174": {
-            "label": "Vite",
             "onAutoForward": "notify",
             "visibility": "public"
         }

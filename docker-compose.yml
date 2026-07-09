@@ -28,7 +28,9 @@ services:
       - hiveref
 
   nginx:
-    image: nginx:stable-alpine
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     container_name: hiveref-nginx
     restart: unless-stopped
     ports:

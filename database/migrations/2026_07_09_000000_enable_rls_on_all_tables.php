@@ -52,7 +52,7 @@ return new class extends Migration
             ->pluck('rolname')
             ->all();
 
-        $current = DB::selectOne('SELECT current_user AS u')->u;
+        $current = DB::scalar('SELECT current_user');
         $roles = array_values(array_unique([...$privileged, $current]));
         $to = implode(', ', array_map(fn ($r) => '"'.str_replace('"', '', $r).'"', $roles));
 

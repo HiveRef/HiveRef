@@ -45,8 +45,11 @@ return new class extends Migration
 
     public function up(): void
     {
-        // Resolve the roles to grant: privileged Supabase roles + the role
-        // actually executing this migration (the application's DB user).
+        // RLS is PostgreSQL-only. Skip on SQLite/other drivers.
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $privileged = DB::table('pg_roles')
             ->whereIn('rolname', ['postgres', 'service_role'])
             ->pluck('rolname')
@@ -57,14 +60,8 @@ return new class extends Migration
         $to = implode(', ', array_map(fn ($r) => '"'.str_replace('"', '', $r).'"', $roles));
 
         foreach ($this->tables as $table) {
-            // Enable RLS (defense-in-depth; privileged roles bypass it).
             DB::statement("ALTER TABLE \"{$table}\" ENABLE ROW LEVEL SECURITY");
-
-            // Idempotent: drop any previous policy before recreating.
             DB::statement("DROP POLICY IF EXISTS \"{$table}_app_policy\" ON \"{$table}\"");
-
-            // Allow only the privileged application roles full CRUD.
-            // anon / authenticated get no policy -> denied by default.
             DB::statement("
                 CREATE POLICY \"{$table}_app_policy\" ON \"{$table}\"
                 FOR ALL
@@ -77,6 +74,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         foreach ($this->tables as $table) {
             DB::statement("DROP POLICY IF EXISTS \"{$table}_app_policy\" ON \"{$table}\"");
             DB::statement("ALTER TABLE \"{$table}\" DISABLE ROW LEVEL SECURITY");

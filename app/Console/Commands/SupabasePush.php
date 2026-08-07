@@ -17,6 +17,18 @@ class SupabasePush extends Command
 
     public function handle(): int
     {
+        if ($this->option('execute')) {
+            $token = $this->option('token') ?: config('supabase.management_token');
+
+            if (! $token) {
+                $this->error('SUPABASE_MANAGEMENT_TOKEN not set. Add to .env or use --token.');
+                $this->newLine();
+                $this->warn('Generate one at: https://supabase.com/dashboard/account/tokens');
+
+                return self::FAILURE;
+            }
+        }
+
         $sql = $this->getMigrationSql();
 
         if (empty(trim($sql))) {
@@ -29,14 +41,6 @@ class SupabasePush extends Command
         $ref = $this->getProjectRef();
 
         if ($this->option('execute')) {
-            if (! $token) {
-                $this->error('SUPABASE_MANAGEMENT_TOKEN not set. Add to .env or use --token.');
-                $this->newLine();
-                $this->warn('Generate one at: https://supabase.com/dashboard/account/tokens');
-
-                return self::FAILURE;
-            }
-
             return $this->pushToSupabase($sql, $token, $ref);
         }
 

@@ -6,10 +6,16 @@
         "ghcr.io/devcontainers/features/node:1": {}
     },
     "postCreateCommand": "docker compose up -d --remove-orphans",
-    "forwardPorts": [8000],
+    "postStartCommand": "php artisan reverb:start --host=0.0.0.0 --port=8080 &",
+    "forwardPorts": [8000, 8080],
     "portsAttributes": {
         "8000": {
             "label": "Laravel (Nginx)",
+            "onAutoForward": "notify",
+            "visibility": "public"
+        },
+        "8080": {
+            "label": "Laravel Reverb (WebSocket)",
             "onAutoForward": "notify",
             "visibility": "public"
         }

@@ -1,8 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Activity } from 'lucide-react';
+import { useMemo } from 'react';
 import AppLayout from '@/Components/AppLayout';
 import { PromptHub } from '@/Components/PromptHub';
 import { SwarmBoard } from '@/Components/SwarmBoard';
+import { useRealtimeMultiEvents } from '@/hooks/useRealtimeEvents';
 
 interface SubTask {
     id: number;
@@ -83,6 +85,12 @@ export default function Dashboard() {
         (st) => st.status !== 'merged' && st.status !== 'failed' && st.status !== 'completed'
     ).length;
 
+    const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
+    const { taskStatus, subTaskStatus } = useRealtimeMultiEvents(projectIds);
+
+    const getTaskStatus = (taskId: number) => taskStatus[taskId] ?? subTasks.find(st => st.task.id === taskId)?.status ?? 'unknown';
+    const getSubTaskStatus = (subTaskId: number) => subTaskStatus[subTaskId] ?? subTasks.find(st => st.id === subTaskId)?.status ?? 'unknown';
+
     return (
         <AppLayout
             breadcrumbs={[{ label: 'Dashboard' }]}
@@ -120,7 +128,7 @@ export default function Dashboard() {
                 <div className="flex-1 h-px" style={{ background: "rgba(250,204,21,0.1)" }} />
             </div>
 
-            <SwarmBoard subTasks={subTasks} activeCount={activeCount} />
+            <SwarmBoard subTasks={subTasks} activeCount={activeCount} subTaskStatus={subTaskStatus} />
         </AppLayout>
     );
 }

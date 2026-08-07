@@ -1,6 +1,6 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { useEcho } from '@laravel/echo-react';
+import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 import { ExternalLink, GitMerge, Trash2, GitCommit, Cpu, Zap, Key, Lock, Activity, XCircle, Clock, CheckCircle, X, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -201,19 +201,17 @@ export default function ProjectShow() {
     const [linking, setLinking] = useState(false);
     const [savingSecret, setSavingSecret] = useState(false);
 
-    useEcho(`project.${project.id}`, 'SubTaskStatusChanged', (e: { sub_task_id: number; task_id: number; status: string }) => {
-        setTasks(prev => prev.map(task =>
-            task.id === e.task_id
-                ? { ...task, sub_tasks: task.sub_tasks.map(st => st.id === e.sub_task_id ? { ...st, status: e.status } : st) }
-                : task
-        ));
-    });
+    const { taskStatus, subTaskStatus } = useRealtimeEvents(project.id);
 
-    useEcho(`project.${project.id}`, 'TaskStatusChanged', (e: { task_id: number; status: string }) => {
-        setTasks(prev => prev.map(task =>
-            task.id === e.task_id ? { ...task, status: e.status } : task
-        ));
-    });
+    // Apply realtime status updates to local state
+    const tasksWithRealtimeStatus = tasks.map(task => ({
+        ...task,
+        status: taskStatus[task.id] ?? task.status,
+        sub_tasks: task.sub_tasks.map(st => ({
+            ...st,
+            status: subTaskStatus[st.id] ?? st.status,
+        })),
+    }));
 
     const prompt = useForm({ prompt: '' });
     const repo = useForm({ github_repo_id: '', github_repo_name: '', github_repo_full_name: '' });
@@ -391,12 +389,12 @@ export default function ProjectShow() {
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded" style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)" }}>
                         <Activity size={10} style={{ color: "#F97316" }} />
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#F97316" }}>
-                            {tasks.filter(t => t.status !== 'completed' && t.status !== 'failed').length} ACTIVE
+                            {tasksWithRealtimeStatus.filter(t => t.status !== 'completed' && t.status !== 'failed').length} ACTIVE
                         </span>
                     </div>
                 </div>
 
-                {tasks.length === 0 ? (
+                {tasksWithRealtimeStatus.length === 0 ? (
                     <div className="text-center py-12">
                         <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: "#333340" }}>
                             No tasks yet. Send a macro prompt to start.
@@ -404,7 +402,7 @@ export default function ProjectShow() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {tasks.map(task => {
+                        {tasksWithRealtimeStatus.map(task => {
                             const taskStatus = statusConfig[task.status] || statusConfig.pending;
                             return (
                                 <div key={task.id} className="rounded-sm overflow-hidden" style={{ background: "#0a0a0c", border: "1px solid rgba(250,204,21,0.1)" }}>

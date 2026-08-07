@@ -94,3 +94,46 @@ test('authenticated user sees dashboard', function () {
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page->component('Dashboard'));
 });
+
+test('settings page shows github connect button when not connected', function () {
+    $user = User::factory()->create([
+        'username' => 'nouser',
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user)
+        ->get('/settings')
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page->component('Settings')
+            ->where('auth.user.has_github_token', false)
+        );
+});
+
+test('settings page shows disconnect button when github connected', function () {
+    $user = User::factory()->github()->create([
+        'username' => 'withgithub',
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user)
+        ->get('/settings')
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page->component('Settings')
+            ->where('auth.user.has_github_token', true)
+        );
+});
+
+test('disconnect github removes token', function () {
+    $user = User::factory()->github()->create([
+        'username' => 'todisconnect',
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user)
+        ->post('/settings/disconnect-github')
+        ->assertRedirect();
+
+    $user->refresh();
+    expect($user->github_token)->toBeNull();
+    expect($user->github_id)->toBeNull();
+});

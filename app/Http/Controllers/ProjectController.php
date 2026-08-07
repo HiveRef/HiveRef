@@ -220,14 +220,14 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'min:10', 'max:5000'],
-            'model' => ['nullable', 'string', 'in:github/deepseek-v4,opencode/big-pickle'],
+            'model' => ['nullable', 'string', 'in:opencode/deepseek-v4-flash-free,github/deepseek-v4,opencode/big-pickle'],
             'api_key' => ['nullable', 'string', 'max:5000'],
             'github_repo_id' => ['required', 'string'],
             'github_repo_name' => ['required', 'string'],
             'github_repo_full_name' => ['required', 'string'],
         ]);
 
-        $model = $validated['model'] ?? 'github/deepseek-v4';
+        $model = $validated['model'] ?? 'opencode/deepseek-v4-flash-free';
         $hasCustomApiKey = ! empty($validated['api_key']);
 
         if ($hasCustomApiKey) {

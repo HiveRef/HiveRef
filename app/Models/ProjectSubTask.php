@@ -19,7 +19,7 @@ class ProjectSubTask extends Model
     ];
 
     protected $attributes = [
-        'model' => 'github/deepseek-v4',
+        'model' => 'opencode/deepseek-v4-flash-free',
         'has_custom_api_key' => false,
     ];
 

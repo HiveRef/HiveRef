@@ -243,7 +243,7 @@ test('user can deploy swarm with custom api key stored as github secret', functi
 test('deploy swarm rejects prompt shorter than 10 characters', function () {
     $response = $this->post('/deploy-swarm', [
         'prompt' => 'Hi',
-        'model' => 'github/deepseek-v4',
+        'model' => 'opencode/deepseek-v4-flash-free',
         'github_repo_id' => '12345',
         'github_repo_name' => 'test-repo',
         'github_repo_full_name' => 'user/test-repo',

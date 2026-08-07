@@ -15,7 +15,7 @@ class SetupCodespaceDevcontainer
         $token = $user->github_token;
         $repoFullName = $subTask->task->project->github_repo_full_name;
         $branchName = $subTask->branch_name;
-        $model = $subTask->model ?? 'github/deepseek-v4';
+        $model = $subTask->model ?? 'opencode/deepseek-v4-flash-free';
         $hasApiKey = $subTask->has_custom_api_key ?? false;
 
         if (! $token || ! $repoFullName || ! $branchName) {

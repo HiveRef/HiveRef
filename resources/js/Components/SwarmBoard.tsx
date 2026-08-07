@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { router } from "@inertiajs/react";
 import { AgentCard, AgentStatus, AgentTask } from "./AgentCard";
 import { Activity, Filter, RefreshCw } from "lucide-react";
 
-function mapToAgentTask(subTask: any): AgentTask {
+function mapToAgentTask(subTask: any, subTaskStatus: string): AgentTask {
   const statusMap: Record<string, AgentStatus> = {
     analyzing_prompt: "Analyzing",
     provisioning: "Provisioning",
@@ -23,7 +23,7 @@ function mapToAgentTask(subTask: any): AgentTask {
     analyzing: "Analyzing",
   };
 
-  const rawStatus = subTask.status || "analyzing_prompt";
+  const rawStatus = subTaskStatus || subTask.status || "analyzing_prompt";
   const title = subTask.title || "Untitled Task";
   const inferredType: AgentTask["type"] =
     title.startsWith("fix:") || title.startsWith("Fix:") ? "Fix"
@@ -52,23 +52,27 @@ function mapToAgentTask(subTask: any): AgentTask {
 interface SwarmBoardProps {
   subTasks: any[];
   activeCount: number;
+  subTaskStatus?: Record<number, string>;
 }
 
 const STATUS_FILTERS: Array<AgentStatus | "All"> = ["All", "Analyzing", "Provisioning", "AI Working", "Awaiting Review", "Merged"];
 
-export function SwarmBoard({ subTasks, activeCount }: SwarmBoardProps) {
+export function SwarmBoard({ subTasks, activeCount, subTaskStatus = {} }: SwarmBoardProps) {
   const [activeFilter, setActiveFilter] = useState<AgentStatus | "All">("All");
 
-  const agentTasks = subTasks.map(mapToAgentTask);
+  const agentTasks = useMemo(() => 
+    subTasks.map(st => mapToAgentTask(st, subTaskStatus[st.id])),
+    [subTasks, subTaskStatus]
+  );
 
-  const counts = {
+  const counts = useMemo(() => ({
     All: agentTasks.length,
     Analyzing: agentTasks.filter((t) => t.status === "Analyzing").length,
     Provisioning: agentTasks.filter((t) => t.status === "Provisioning").length,
     "AI Working": agentTasks.filter((t) => t.status === "AI Working").length,
     "Awaiting Review": agentTasks.filter((t) => t.status === "Awaiting Review").length,
     Merged: agentTasks.filter((t) => t.status === "Merged").length,
-  };
+  }), [agentTasks]);
 
   const filtered = activeFilter === "All" ? agentTasks : agentTasks.filter((t) => t.status === activeFilter);
 

@@ -3,8 +3,8 @@
 namespace App\Events;
 
 use App\Models\ProjectTask;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 
@@ -16,9 +16,9 @@ class TaskStatusChanged implements ShouldBroadcast
         public ProjectTask $task,
     ) {}
 
-    public function broadcastOn(): Channel
+    public function broadcastOn(): PrivateChannel
     {
-        return new Channel("project.{$this->task->project_id}");
+        return new PrivateChannel("project.{$this->task->project_id}");
     }
 
     public function broadcastWith(): array
@@ -28,5 +28,10 @@ class TaskStatusChanged implements ShouldBroadcast
             'status' => $this->task->status->value,
             'project_id' => $this->task->project_id,
         ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'task.status.changed';
     }
 }

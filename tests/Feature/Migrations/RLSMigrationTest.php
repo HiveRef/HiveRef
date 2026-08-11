@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 
 test('RLS migration creates policies on PostgreSQL', function () {
     // Only run if PostgreSQL is available

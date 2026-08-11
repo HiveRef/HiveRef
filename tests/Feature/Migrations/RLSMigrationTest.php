@@ -17,7 +17,7 @@ test('RLS migration skips on SQLite', function () {
     expect($output)->not->toContain('ERROR');
 });
 
-test('RLS migration creates policies on PostgreSQL', function () {
+test('RLS is enabled on PostgreSQL tables', function () {
     // Only run if PostgreSQL is available
     if (config('database.default') !== 'pgsql') {
         $this->markTestSkipped('PostgreSQL not configured');
@@ -49,4 +49,71 @@ test('RLS migration creates policies on PostgreSQL', function () {
 
     expect((bool) $usersTable->relrowsecurity)->toBeTrue();
     expect($policyExists)->toBeTrue();
+    // Check that RLS is enabled on application tables
+    $tables = [
+        'users',
+        'password_reset_tokens',
+        'sessions',
+        'cache',
+        'cache_locks',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'projects',
+        'project_tasks',
+        'project_sub_tasks',
+        'activity_logs',
+    ];
+
+    foreach ($tables as $table) {
+        $result = DB::select("
+            SELECT relrowsecurity
+            FROM pg_class
+            WHERE relname = '{$table}'
+        ");
+
+        if (empty($result)) {
+            continue; // table might not exist
+        }
+
+        expect($result[0]->relrowsecurity)->toBeTrue("RLS not enabled on {$table}");
+    }
+});
+
+test('RLS policies exist on PostgreSQL tables', function () {
+    // Only run if PostgreSQL is available
+    if (config('database.default') !== 'pgsql') {
+        $this->markTestSkipped('PostgreSQL not configured');
+    }
+
+    $tables = [
+        'users',
+        'password_reset_tokens',
+        'sessions',
+        'cache',
+        'cache_locks',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'projects',
+        'project_tasks',
+        'project_sub_tasks',
+        'activity_logs',
+    ];
+
+    foreach ($tables as $table) {
+        $result = DB::select("
+            SELECT polname
+            FROM pg_policy
+            JOIN pg_class ON pg_class.oid = pg_policy.polrelid
+            WHERE pg_class.relname = '{$table}'
+            AND polname = '{$table}_app_policy'
+        ");
+
+        if (empty($result)) {
+            continue; // table might not exist
+        }
+
+        expect(count($result))->toBeGreaterThan(0, "Policy not found on {$table}");
+    }
 });

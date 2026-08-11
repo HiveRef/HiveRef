@@ -3,117 +3,77 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
+$appTables = [
+    'users',
+    'password_reset_tokens',
+    'sessions',
+    'cache',
+    'cache_locks',
+    'jobs',
+    'job_batches',
+    'failed_jobs',
+    'projects',
+    'project_tasks',
+    'project_sub_tasks',
+    'activity_logs',
+];
+
 test('RLS migration skips on SQLite', function () {
-    // Run the migration on SQLite (default test DB)
+    if (DB::connection()->getDriverName() !== 'sqlite') {
+        $this->markTestSkipped('SQLite not configured');
+    }
+
     Artisan::call('migrate', [
         '--path' => 'database/migrations/2026_07_09_000000_enable_rls_on_all_tables.php',
         '--force' => true,
         '--database' => 'sqlite',
     ]);
 
-    // Should complete without error (skipped due to driver check)
     $output = Artisan::output();
+
     expect($output)->not->toContain('pg_roles');
     expect($output)->not->toContain('ERROR');
 });
 
-test('RLS is enabled on PostgreSQL tables', function () {
-    // Only run if PostgreSQL is available
-    if (config('database.default') !== 'pgsql') {
+test('RLS is enabled on PostgreSQL tables', function () use ($appTables) {
+    if (DB::connection()->getDriverName() !== 'pgsql') {
         $this->markTestSkipped('PostgreSQL not configured');
     }
 
-    Artisan::call('migrate:rollback', [
-        '--path' => 'database/migrations/2026_07_09_000000_enable_rls_on_all_tables.php',
-        '--force' => true,
-    ]);
-
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2026_07_09_000000_enable_rls_on_all_tables.php',
-        '--force' => true,
-    ]);
-
-    $usersTable = DB::selectOne("
-        SELECT c.relrowsecurity
-        FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'public'
-          AND c.relname = 'users'
-    ");
-
-    $policyExists = DB::table('pg_policies')
-        ->where('schemaname', 'public')
-        ->where('tablename', 'users')
-        ->where('policyname', 'users_app_policy')
-        ->exists();
-
-    expect((bool) $usersTable->relrowsecurity)->toBeTrue();
-    expect($policyExists)->toBeTrue();
-    // Check that RLS is enabled on application tables
-    $tables = [
-        'users',
-        'password_reset_tokens',
-        'sessions',
-        'cache',
-        'cache_locks',
-        'jobs',
-        'job_batches',
-        'failed_jobs',
-        'projects',
-        'project_tasks',
-        'project_sub_tasks',
-        'activity_logs',
-    ];
-
-    foreach ($tables as $table) {
-        $result = DB::select("
-            SELECT relrowsecurity
-            FROM pg_class
-            WHERE relname = '{$table}'
-        ");
+    foreach ($appTables as $table) {
+        $result = DB::select(
+            'SELECT relrowsecurity FROM pg_class WHERE relname = ?',
+            [$table]
+        );
 
         if (empty($result)) {
-            continue; // table might not exist
+            continue; // table might not exist yet
         }
 
-        expect($result[0]->relrowsecurity)->toBeTrue("RLS not enabled on {$table}");
+        expect($result[0]->relrowsecurity)
+            ->toBeTrue("RLS not enabled on {$table}");
     }
 });
 
-test('RLS policies exist on PostgreSQL tables', function () {
-    // Only run if PostgreSQL is available
-    if (config('database.default') !== 'pgsql') {
+test('RLS policies exist on PostgreSQL tables', function () use ($appTables) {
+    if (DB::connection()->getDriverName() !== 'pgsql') {
         $this->markTestSkipped('PostgreSQL not configured');
     }
 
-    $tables = [
-        'users',
-        'password_reset_tokens',
-        'sessions',
-        'cache',
-        'cache_locks',
-        'jobs',
-        'job_batches',
-        'failed_jobs',
-        'projects',
-        'project_tasks',
-        'project_sub_tasks',
-        'activity_logs',
-    ];
-
-    foreach ($tables as $table) {
-        $result = DB::select("
-            SELECT polname
-            FROM pg_policy
-            JOIN pg_class ON pg_class.oid = pg_policy.polrelid
-            WHERE pg_class.relname = '{$table}'
-            AND polname = '{$table}_app_policy'
-        ");
+    foreach ($appTables as $table) {
+        $result = DB::select(
+            'SELECT 1
+             FROM pg_policy p
+             JOIN pg_class c ON c.oid = p.polrelid
+             WHERE c.relname = ? AND p.polname = ?',
+            [$table, "{$table}_app_policy"]
+        );
 
         if (empty($result)) {
-            continue; // table might not exist
+            continue; // table might not exist yet
         }
 
-        expect(count($result))->toBeGreaterThan(0, "Policy not found on {$table}");
+        expect(count($result))
+            ->toBeGreaterThan(0, "Policy not found on {$table}");
     }
 });

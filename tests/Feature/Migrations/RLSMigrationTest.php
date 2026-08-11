@@ -23,14 +23,30 @@ test('RLS migration creates policies on PostgreSQL', function () {
         $this->markTestSkipped('PostgreSQL not configured');
     }
 
+    Artisan::call('migrate:rollback', [
+        '--path' => 'database/migrations/2026_07_09_000000_enable_rls_on_all_tables.php',
+        '--force' => true,
+    ]);
+
     Artisan::call('migrate', [
         '--path' => 'database/migrations/2026_07_09_000000_enable_rls_on_all_tables.php',
         '--force' => true,
     ]);
 
-    $output = Artisan::output();
+    $usersTable = DB::selectOne("
+        SELECT c.relrowsecurity
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'users'
+    ");
 
-    // Should run RLS commands on PostgreSQL
-    expect($output)->toContain('ENABLE ROW LEVEL SECURITY');
-    expect($output)->toContain('CREATE POLICY');
+    $policyExists = DB::table('pg_policies')
+        ->where('schemaname', 'public')
+        ->where('tablename', 'users')
+        ->where('policyname', 'users_app_policy')
+        ->exists();
+
+    expect((bool) $usersTable->relrowsecurity)->toBeTrue();
+    expect($policyExists)->toBeTrue();
 });
